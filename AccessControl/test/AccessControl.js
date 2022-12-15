@@ -9,7 +9,7 @@ const DEFAULT_ADMIN_ROLE = '0x00000000000000000000000000000000000000000000000000
 describe("Testing Admin Contract", function () {
     // Creating the instance and contract info for the Admin Contract
     let adminInstance, adminContract;
-    let bzAccessControlInstance, bzAccessControlContract;
+    let AccessControlInstance, AccessControlContract;
 
     // Creating the users
     let admin, owner, authorized, other, otherAdmin, otherAuthorized;
@@ -19,23 +19,23 @@ describe("Testing Admin Contract", function () {
         [owner, authorized, other, otherAdmin, otherAuthorized] = await ethers.getSigners();
 
         // Getting the admin contract code (abi, bytecode, name)
-        bzAccessControlContract = await ethers.getContractFactory("BZAccessControl");
+        AccessControlContract = await ethers.getContractFactory("AccessControl");
 
         // Deploying the instance
-        bzAccessControlInstance = await bzAccessControlContract.deploy();
+        AccessControlInstance = await AccessControlContract.deploy();
 
-        await bzAccessControlInstance.deployed();
+        await AccessControlInstance.deployed();
 
         // Getting the admin contract code (abi, bytecode, name)
-        adminContract = await ethers.getContractFactory("AdminContract");
+        adminContract = await ethers.getContractFactory("AdminContractMock");
 
         // Deploying the instance
         adminInstance = await adminContract.deploy();
 
         await adminInstance.deployed();
 
-        await bzAccessControlInstance.connectToOtherContracts([adminInstance.address]);
-        await adminInstance.setAccessControl(bzAccessControlInstance.address);
+        await AccessControlInstance.connectToOtherContracts([adminInstance.address]);
+        await adminInstance.setAccessControl(AccessControlInstance.address);
 
         admin = adminInstance.address;
     });
@@ -61,9 +61,9 @@ describe("Testing Admin Contract", function () {
 
         it('non-admin cannot grant role to other accounts', async function () {
             await expect(
-                bzAccessControlInstance.connect(other).grantRole(ROLE_1, authorized.address)
+                AccessControlInstance.connect(other).grantRole(ROLE_1, authorized.address)
             ).to.be.revertedWith(
-                `BZAccessControl: account ${other.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`,
+                `AccessControl: account ${other.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`,
             );
         });
 
@@ -71,7 +71,7 @@ describe("Testing Admin Contract", function () {
             await adminInstance.grantRole(ROLE_1, authorized.address);
             await expect(
                 adminInstance.grantRole(ROLE_1, authorized.address)
-            ).not.to.be.emit(bzAccessControlInstance, 'RoleGranted');
+            ).not.to.be.emit(AccessControlInstance, 'RoleGranted');
         });
     });
 
@@ -81,7 +81,7 @@ describe("Testing Admin Contract", function () {
 
             await expect(
                 adminInstance.revokeRole(ROLE_1, authorized.address)
-            ).not.to.be.emit(bzAccessControlInstance, 'RoleRevoked');
+            ).not.to.be.emit(AccessControlInstance, 'RoleRevoked');
         });
 
         context('with granted role', function () {
@@ -92,16 +92,16 @@ describe("Testing Admin Contract", function () {
             it('admin can revoke role', async function () {
                 await expect(
                     adminInstance.revokeRole(ROLE_1, authorized.address)
-                ).to.emit(bzAccessControlInstance, 'RoleRevoked').withArgs(ROLE_1, authorized.address, admin);
+                ).to.emit(AccessControlInstance, 'RoleRevoked').withArgs(ROLE_1, authorized.address, admin);
 
                 expect(await adminInstance.hasRole(ROLE_1, authorized.address)).to.equal(false);
             });
 
             it('non-admin cannot revoke role', async function () {
                 await expect(
-                    bzAccessControlInstance.connect(other).revokeRole(ROLE_1, authorized.address),
+                    AccessControlInstance.connect(other).revokeRole(ROLE_1, authorized.address),
                 ).to.be.revertedWith(
-                    `BZAccessControl: account ${other.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`,
+                    `AccessControl: account ${other.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`,
                 );
             });
 
@@ -110,7 +110,7 @@ describe("Testing Admin Contract", function () {
 
                 await expect(
                     adminInstance.revokeRole(ROLE_1, authorized.address)
-                ).not.to.be.emit(bzAccessControlInstance, 'RoleRevoked');
+                ).not.to.be.emit(AccessControlInstance, 'RoleRevoked');
             });
         });
     });
@@ -119,7 +119,7 @@ describe("Testing Admin Contract", function () {
         beforeEach(async function () {
             await expect(
                 adminInstance.setRoleAdmin(ROLE_1, ROLE_2)
-            ).to.be.emit(bzAccessControlInstance, 'AdminRoleChanged').withArgs(ROLE_1, DEFAULT_ADMIN_ROLE, ROLE_2);
+            ).to.be.emit(AccessControlInstance, 'AdminRoleChanged').withArgs(ROLE_1, DEFAULT_ADMIN_ROLE, ROLE_2);
 
             await adminInstance.grantRole(ROLE_2, otherAdmin.address);
         });
@@ -130,22 +130,22 @@ describe("Testing Admin Contract", function () {
 
         it('the new admin can grant roles', async function () {
             await expect(
-                bzAccessControlInstance.connect(otherAdmin).grantRole(ROLE_1, authorized.address)
-            ).to.be.emit(bzAccessControlInstance, 'RoleGranted').withArgs(ROLE_1, authorized.address, otherAdmin.address);
+                AccessControlInstance.connect(otherAdmin).grantRole(ROLE_1, authorized.address)
+            ).to.be.emit(AccessControlInstance, 'RoleGranted').withArgs(ROLE_1, authorized.address, otherAdmin.address);
         });
 
         it('the new admin can revoke roles', async function () {
-            await bzAccessControlInstance.connect(otherAdmin).grantRole(ROLE_1, authorized.address);
+            await AccessControlInstance.connect(otherAdmin).grantRole(ROLE_1, authorized.address);
             await expect(
-                bzAccessControlInstance.connect(otherAdmin).revokeRole(ROLE_1, authorized.address)
-            ).to.be.emit(bzAccessControlInstance, 'RoleRevoked').withArgs(ROLE_1, authorized.address, otherAdmin.address);
+                AccessControlInstance.connect(otherAdmin).revokeRole(ROLE_1, authorized.address)
+            ).to.be.emit(AccessControlInstance, 'RoleRevoked').withArgs(ROLE_1, authorized.address, otherAdmin.address);
         });
 
         it('a role\'s previous admins no longer grant roles', async function () {
             await expect(
                 adminInstance.grantRole(ROLE_1, authorized.address),
             ).to.be.revertedWith(
-                `BZAccessControl: account ${admin.toLowerCase()} is missing role ${ROLE_2}`,
+                `AccessControl: account ${admin.toLowerCase()} is missing role ${ROLE_2}`,
             );
         });
 
@@ -153,7 +153,7 @@ describe("Testing Admin Contract", function () {
             await expect(
                 adminInstance.revokeRole(ROLE_1, authorized.address)
             ).to.be.revertedWith(
-                `BZAccessControl: account ${admin.toLowerCase()} is missing role ${ROLE_2}`,
+                `AccessControl: account ${admin.toLowerCase()} is missing role ${ROLE_2}`,
             );
         });
     });
@@ -171,7 +171,7 @@ describe("Testing Admin Contract", function () {
             await expect(
                 adminInstance.connect(other).senderProtected(ROLE_1)
             ).to.be.revertedWith(
-                `AdminContract: account ${other.address.toLowerCase()} is missing role ${ROLE_1}`,
+                `AdminContractMock: account ${other.address.toLowerCase()} is missing role ${ROLE_1}`,
             );
         });
 
@@ -179,7 +179,7 @@ describe("Testing Admin Contract", function () {
             await expect(
                 adminInstance.connect(authorized).senderProtected(ROLE_2)
             ).to.be.revertedWith(
-                `AdminContract: account ${authorized.address.toLowerCase()} is missing role ${ROLE_2}`,
+                `AdminContractMock: account ${authorized.address.toLowerCase()} is missing role ${ROLE_2}`,
             );
         });
     });
@@ -211,97 +211,99 @@ describe("Testing Admin Contract", function () {
     });
 })
 
-describe("Testing Inherit Contract", function () {
-    // Creating the instance and contract info for the Admin Contract
-    let inheritInstance, inheritContract;
+describe("Testing Access Control", function () {
+    // Creating the instance and contract info for the Access Control
+    let AccessControlInstance, AccessControlContract;
 
     // Creating the users
-    let admin, authorized, other, otherAdmin, otherAuthorized;
+    let admin, owner, authorized, other, otherAdmin, otherAuthorized;
 
     beforeEach(async () => {
         // Getting the users provided by ethers
-        [admin, authorized, other, otherAdmin, otherAuthorized] = await ethers.getSigners();
+        [owner, authorized, other, otherAdmin, otherAuthorized] = await ethers.getSigners();
 
         // Getting the admin contract code (abi, bytecode, name)
-        inheritContract = await ethers.getContractFactory("InheritContract");
+        AccessControlContract = await ethers.getContractFactory("AccessControl");
 
         // Deploying the instance
-        inheritInstance = await inheritContract.deploy();
+        AccessControlInstance = await AccessControlContract.deploy();
 
-        await inheritInstance.deployed();
+        await AccessControlInstance.deployed();
+
+        admin = owner.address;
     });
 
     describe('default admin', function () {
         it('deployer has default admin role', async function () {
-            expect(await inheritInstance.hasRole(DEFAULT_ADMIN_ROLE, admin.address)).to.equal(true);
+            expect(await AccessControlInstance.hasRole(DEFAULT_ADMIN_ROLE, admin)).to.equal(true);
         });
 
         it('other roles\'s admin is the default admin role', async function () {
-            expect(await inheritInstance.getRoleAdmin(ROLE_1)).to.equal(DEFAULT_ADMIN_ROLE);
+            expect(await AccessControlInstance.getRoleAdmin(ROLE_1)).to.equal(DEFAULT_ADMIN_ROLE);
         });
 
         it('default admin role\'s admin is itself', async function () {
-            expect(await inheritInstance.getRoleAdmin(DEFAULT_ADMIN_ROLE)).to.equal(DEFAULT_ADMIN_ROLE);
+            expect(await AccessControlInstance.getRoleAdmin(DEFAULT_ADMIN_ROLE)).to.equal(DEFAULT_ADMIN_ROLE);
         });
     });
 
     describe('granting', function () {
         beforeEach(async function () {
-            await inheritInstance.grantRole(ROLE_1, authorized.address);
+            await AccessControlInstance.grantRole(ROLE_1, authorized.address);
         });
 
         it('non-admin cannot grant role to other accounts', async function () {
             await expect(
-                inheritInstance.connect(other).grantRole(ROLE_1, authorized.address)
+                AccessControlInstance.connect(other).grantRole(ROLE_1, authorized.address)
             ).to.be.revertedWith(
-                `BZAccessControl: account ${other.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`,
+                `AccessControl: account ${other.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`,
             );
         });
 
         it('accounts can be granted a role multiple times', async function () {
-            await inheritInstance.grantRole(ROLE_1, authorized.address);
+            await AccessControlInstance.grantRole(ROLE_1, authorized.address);
             await expect(
-                inheritInstance.grantRole(ROLE_1, authorized.address)
-            ).not.to.be.emit(inheritInstance, 'RoleGranted');
+                AccessControlInstance.grantRole(ROLE_1, authorized.address)
+            ).not.to.be.emit(AccessControlInstance, 'RoleGranted');
         });
     });
 
     describe('revoking', function () {
         it('roles that are not had can be revoked', async function () {
-            expect(await inheritInstance.hasRole(ROLE_1, authorized.address)).to.equal(false);
+            expect(await AccessControlInstance.hasRole(ROLE_1, authorized.address)).to.equal(false);
 
             await expect(
-                inheritInstance.revokeRole(ROLE_1, authorized.address)
-            ).not.to.be.emit(inheritInstance, 'RoleRevoked');
+                AccessControlInstance.revokeRole(ROLE_1, authorized.address)
+            ).not.to.be.emit(AccessControlInstance, 'RoleRevoked');
         });
 
         context('with granted role', function () {
             beforeEach(async function () {
-                await inheritInstance.grantRole(ROLE_1, authorized.address);
+                await AccessControlInstance.grantRole(ROLE_1, authorized.address);
             });
 
             it('admin can revoke role', async function () {
                 await expect(
-                    inheritInstance.revokeRole(ROLE_1, authorized.address)
-                ).to.emit(inheritInstance, 'RoleRevoked').withArgs(ROLE_1, authorized.address, admin.address);
+                    AccessControlInstance.revokeRole(ROLE_1, authorized.address)
+                ).to.emit(AccessControlInstance, 'RoleRevoked').withArgs(ROLE_1, authorized.address, admin);
 
-                expect(await inheritInstance.hasRole(ROLE_1, authorized.address)).to.equal(false);
+                expect(await AccessControlInstance.hasRole(ROLE_1, authorized.address)).to.equal(false);
             });
 
             it('non-admin cannot revoke role', async function () {
                 await expect(
-                    inheritInstance.connect(other).revokeRole(ROLE_1, authorized.address),
+                    AccessControlInstance.connect(other).revokeRole(ROLE_1, authorized.address),
                 ).to.be.revertedWith(
-                    `BZAccessControl: account ${other.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`,
+                    `AccessControl: account ${other.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`,
                 );
             });
 
             it('a role can be revoked multiple times', async function () {
-                await inheritInstance.revokeRole(ROLE_1, authorized.address);
+                await AccessControlInstance.revokeRole(ROLE_1, authorized.address);
 
                 await expect(
-                    inheritInstance.revokeRole(ROLE_1, authorized.address)
-                ).not.to.be.emit(inheritInstance, 'RoleRevoked');
+                    AccessControlInstance.revokeRole(ROLE_1, authorized.address)
+                ).not.to.be.emit(AccessControlInstance, 'RoleRevoked');
             });
         });
     });
@@ -309,40 +311,40 @@ describe("Testing Inherit Contract", function () {
     describe('renouncing', function () {
         it('roles that are not had can be renounced', async function () {
             await expect(
-                inheritInstance.connect(authorized).renounceRole(ROLE_1, authorized.address)
+                AccessControlInstance.connect(authorized).renounceRole(ROLE_1, authorized.address)
             ).to.be.revertedWith(
-                `BZAccessControl: account ${authorized.address.toLowerCase()} is missing role ${ROLE_1}`,
+                `AccessControl: account ${authorized.address.toLowerCase()} is missing role ${ROLE_1}`,
             );
         });
 
         context('with granted role', function () {
             beforeEach(async function () {
-                await inheritInstance.grantRole(ROLE_1, authorized.address);
+                await AccessControlInstance.grantRole(ROLE_1, authorized.address);
             });
 
             it('bearer can renounce role', async function () {
                 await expect(
-                    inheritInstance.connect(authorized).renounceRole(ROLE_1, authorized.address)
-                ).to.be.emit(inheritInstance, 'RoleRenounced').withArgs(ROLE_1, authorized.address);
+                    AccessControlInstance.connect(authorized).renounceRole(ROLE_1, authorized.address)
+                ).to.be.emit(AccessControlInstance, 'RoleRenounced').withArgs(ROLE_1, authorized.address);
 
-                expect(await inheritInstance.hasRole(ROLE_1, authorized.address)).to.equal(false);
+                expect(await AccessControlInstance.hasRole(ROLE_1, authorized.address)).to.equal(false);
             });
 
             it('only the sender can renounce their roles', async function () {
                 await expect(
-                    inheritInstance.renounceRole(ROLE_1, authorized.address)
+                    AccessControlInstance.renounceRole(ROLE_1, authorized.address)
                 ).to.be.revertedWith(
-                    `BZAccessControl: account ${admin.address.toLowerCase()} is missing role ${ROLE_1}`,
+                    `AccessControl: account ${admin.toLowerCase()} is missing role ${ROLE_1}`,
                 );
             });
 
             it('a role can be renounced multiple times', async function () {
-                await inheritInstance.connect(authorized).renounceRole(ROLE_1, authorized.address);
+                await AccessControlInstance.connect(authorized).renounceRole(ROLE_1, authorized.address);
 
                 await expect(
-                    inheritInstance.connect(authorized).renounceRole(ROLE_1, authorized.address)
+                    AccessControlInstance.connect(authorized).renounceRole(ROLE_1, authorized.address)
                 ).to.be.revertedWith(
-                    `BZAccessControl: account ${authorized.address.toLowerCase()} is missing role ${ROLE_1}`,
+                    `AccessControl: account ${authorized.address.toLowerCase()} is missing role ${ROLE_1}`,
                 );
             });
         });
@@ -351,95 +353,69 @@ describe("Testing Inherit Contract", function () {
     describe('setting role admin', function () {
         beforeEach(async function () {
             await expect(
-                inheritInstance.setRoleAdmin(ROLE_1, ROLE_2)
-            ).to.be.emit(inheritInstance, 'AdminRoleChanged').withArgs(ROLE_1, DEFAULT_ADMIN_ROLE, ROLE_2);
+                AccessControlInstance.setRoleAdmin(ROLE_1, ROLE_2)
+            ).to.be.emit(AccessControlInstance, 'AdminRoleChanged').withArgs(ROLE_1, DEFAULT_ADMIN_ROLE, ROLE_2);
 
-            await inheritInstance.grantRole(ROLE_2, otherAdmin.address);
+            await AccessControlInstance.grantRole(ROLE_2, otherAdmin.address);
         });
 
         it('a role\'s admin role can be changed', async function () {
-            expect(await inheritInstance.getRoleAdmin(ROLE_1)).to.equal(ROLE_2);
+            expect(await AccessControlInstance.getRoleAdmin(ROLE_1)).to.equal(ROLE_2);
         });
 
         it('the new admin can grant roles', async function () {
             await expect(
-                inheritInstance.connect(otherAdmin).grantRole(ROLE_1, authorized.address)
-            ).to.be.emit(inheritInstance, 'RoleGranted').withArgs(ROLE_1, authorized.address, otherAdmin.address);
+                AccessControlInstance.connect(otherAdmin).grantRole(ROLE_1, authorized.address)
+            ).to.be.emit(AccessControlInstance, 'RoleGranted').withArgs(ROLE_1, authorized.address, otherAdmin.address);
         });
 
         it('the new admin can revoke roles', async function () {
-            await inheritInstance.connect(otherAdmin).grantRole(ROLE_1, authorized.address);
+            await AccessControlInstance.connect(otherAdmin).grantRole(ROLE_1, authorized.address);
             await expect(
-                inheritInstance.connect(otherAdmin).revokeRole(ROLE_1, authorized.address)
-            ).to.be.emit(inheritInstance, 'RoleRevoked').withArgs(ROLE_1, authorized.address, otherAdmin.address);
+                AccessControlInstance.connect(otherAdmin).revokeRole(ROLE_1, authorized.address)
+            ).to.be.emit(AccessControlInstance, 'RoleRevoked').withArgs(ROLE_1, authorized.address, otherAdmin.address);
         });
 
         it('a role\'s previous admins no longer grant roles', async function () {
             await expect(
-                inheritInstance.grantRole(ROLE_1, authorized.address),
+                AccessControlInstance.grantRole(ROLE_1, authorized.address),
             ).to.be.revertedWith(
-                `BZAccessControl: account ${admin.address.toLowerCase()} is missing role ${ROLE_2}`,
+                `AccessControl: account ${admin.toLowerCase()} is missing role ${ROLE_2}`,
             );
         });
 
         it('a role\'s previous admins no longer revoke roles', async function () {
             await expect(
-                inheritInstance.revokeRole(ROLE_1, authorized.address)
+                AccessControlInstance.revokeRole(ROLE_1, authorized.address)
             ).to.be.revertedWith(
-                `BZAccessControl: account ${admin.address.toLowerCase()} is missing role ${ROLE_2}`,
-            );
-        });
-    });
-
-    describe('onlyRole modifier', function () {
-        beforeEach(async function () {
-            await inheritInstance.grantRole(ROLE_1, authorized.address);
-        });
-
-        it('do not revert if sender has role', async function () {
-            await inheritInstance.connect(authorized).senderProtected(ROLE_1);
-        });
-
-        it('revert if sender doesn\'t have role #1', async function () {
-            await expect(
-                inheritInstance.connect(other).senderProtected(ROLE_1)
-            ).to.be.revertedWith(
-                `BZAccessControl: account ${other.address.toLowerCase()} is missing role ${ROLE_1}`,
-            );
-        });
-
-        it('revert if sender doesn\'t have role #2', async function () {
-            await expect(
-                inheritInstance.connect(authorized).senderProtected(ROLE_2)
-            ).to.be.revertedWith(
-                `BZAccessControl: account ${authorized.address.toLowerCase()} is missing role ${ROLE_2}`,
+                `AccessControl: account ${admin.toLowerCase()} is missing role ${ROLE_2}`,
             );
         });
     });
 
     describe('enumerating', function () {
         it('role bearers can be enumerated', async function () {
-            await inheritInstance.grantRole(ROLE_1, authorized.address);
-            await inheritInstance.grantRole(ROLE_1, other.address);
-            await inheritInstance.grantRole(ROLE_1, otherAuthorized.address);
-            await inheritInstance.revokeRole(ROLE_1, other.address);
+            await AccessControlInstance.grantRole(ROLE_1, authorized.address);
+            await AccessControlInstance.grantRole(ROLE_1, other.address);
+            await AccessControlInstance.grantRole(ROLE_1, otherAuthorized.address);
+            await AccessControlInstance.revokeRole(ROLE_1, other.address);
 
-            const memberCount = await inheritInstance.getRoleCount(ROLE_1);
+            const memberCount = await AccessControlInstance.getRoleCount(ROLE_1);
             expect(memberCount).to.equal('2');
 
             const bearers = [];
             for (let i = 0; i < memberCount; ++i) {
-                bearers.push(await inheritInstance.getRoleAt(ROLE_1, i));
+                bearers.push(await AccessControlInstance.getRoleAt(ROLE_1, i));
             }
 
             expect(bearers).to.have.members([authorized.address, otherAuthorized.address]);
         });
         it('role enumeration should be in sync after renounceRole call', async function () {
-            expect(await inheritInstance.getRoleCount(ROLE_1)).to.equal('0');
-            await inheritInstance.grantRole(ROLE_1, admin.address);
-            expect(await inheritInstance.getRoleCount(ROLE_1)).to.equal('1');
-            await inheritInstance.renounceRole(ROLE_1, admin.address);
-            expect(await inheritInstance.getRoleCount(ROLE_1)).to.equal('0');
+            expect(await AccessControlInstance.getRoleCount(ROLE_1)).to.equal('0');
+            await AccessControlInstance.grantRole(ROLE_1, admin);
+            expect(await AccessControlInstance.getRoleCount(ROLE_1)).to.equal('1');
+            await AccessControlInstance.renounceRole(ROLE_1, admin);
+            expect(await AccessControlInstance.getRoleCount(ROLE_1)).to.equal('0');
         });
     });
 })

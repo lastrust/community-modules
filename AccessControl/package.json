@@ -1,19 +1,19 @@
 {
-  "name": "BZAccessControl",
+  "name": "Bunzz-AccessControl",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Bunzz AccessControl Module",
+  "author": "Top-Kraken",
+  "license": "MIT",
   "scripts": {
-    "build": "npx hardhat compile",
+    "clean": "npx hardhat clean",
+    "compile": "npx hardhat compile",
+    "build": "npm run clean && npm run compile",
     "test": "npx hardhat test",
     "deploy": "npx hardhat run scripts/deploy.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
-    "@openzeppelin/contracts": "^4.5.0",
+    "@openzeppelin/contracts": "^4.3.2",
     "hardhat": "^2.12.4",
     "hardhat-gas-reporter": "^1.0.9"
   },

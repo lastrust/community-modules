@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./BZAccessControl.sol";
+import "./AccessControl.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract AdminContract is Context {
-    BZAccessControl private _accessControl;
+contract AdminContractMock is Context {
+    AccessControl private _accessControl;
 
     constructor() {}
 
@@ -16,7 +16,7 @@ contract AdminContract is Context {
     }
 
     function setAccessControl(address _address) external {
-        _accessControl = BZAccessControl(_address);
+        _accessControl = AccessControl(_address);
     }
 
     function hasRole(bytes32 role, address account)
@@ -66,7 +66,7 @@ contract AdminContract is Context {
             revert(
                 string(
                     abi.encodePacked(
-                        "AdminContract: account ",
+                        "AdminContractMock: account ",
                         Strings.toHexString(uint160(account), 20),
                         " is missing role ",
                         Strings.toHexString(uint256(role), 32)

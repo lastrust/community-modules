@@ -15,19 +15,19 @@ async function main() {
     Info: (await deployer.getBalance()).toString(),
   };
 
-  // Creating the instance and contract info for the BZAccessControl
-  const BZAccessControl = await ethers.getContractFactory("BZAccessControl");
-  const bzaccesscontrol = await BZAccessControl.deploy();
+  // Creating the instance and contract info for the AccessControl
+  const AccessControl = await ethers.getContractFactory("AccessControl");
+  const accesscontrol = await AccessControl.deploy();
 
-  await bzaccesscontrol.deployed();
+  await accesscontrol.deployed();
 
   // Saving the info to be logged in the table (deployment info)
-  var bzaccessControlLog = {
-    Label: "Deployed BZAccessControl Address",
-    Info: bzaccesscontrol.address,
+  var accessControlLog = {
+    Label: "Deployed AccessControl Address",
+    Info: accesscontrol.address,
   };
 
-  console.table([deployerLog, deployerBalanceLog, bzaccessControlLog]);
+  console.table([deployerLog, deployerBalanceLog, accessControlLog]);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

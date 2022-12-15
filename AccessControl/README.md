@@ -1,9 +1,9 @@
-# BZAccessControl Module
+# AccessControl Module
 
 
 ## Overview
 
-Using BZAccessControl Module, users can define multiple roles and manage the user access by the roles. Users can create a new role identifier (AdminRole) that is used to grant, revoke, and check if the account has the role. You can connect the contract as the AdminRole using connectOtherContracts function.
+Using AccessControl Module, users can define multiple roles and manage the user access by the roles. Users can create a new role identifier (AdminRole) that is used to grant, revoke, and check if the account has the role. You can connect the contract as the AdminRole using connectOtherContracts function.
 
 ## How to Use
 1. Deploy smart contract via `Bunzz`
