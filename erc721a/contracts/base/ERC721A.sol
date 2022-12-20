@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 // Openzeppelin
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
@@ -9,12 +10,12 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 // Interfaces
-import "../interface/IBunzz.sol";
 import "../interface/IERC721A.sol";
+import "../interface/IBunzz.sol";
 
 /**
  * @title ERC721A
- * 
+ *
  * @dev Implementation of [ERC721](https://eips.ethereum.org/EIPS/eip-721) Non-Fungible Token Standard, including
  * the Metadata extension. Built to optimize for lower gas during batch mints.
  *
@@ -24,7 +25,7 @@ import "../interface/IERC721A.sol";
  *
  * @author kazunetakeda25 (Used Azuki's v3.3)
  */
-contract ERC721A is Context, ERC165, IERC721A, IBunzz {
+contract ERC721A is Context, ERC165, IERC721A, IBunzz, Ownable {
     using Address for address;
     using Strings for uint256;
 
@@ -89,6 +90,15 @@ contract ERC721A is Context, ERC165, IERC721A, IBunzz {
             return _currentIndex - _startTokenId();
         }
     }
+
+    /**
+     * @dev Connect to other contracts
+     */
+    function connectToOtherContracts(address[] calldata _contracts)
+        public
+        override
+        onlyOwner
+    {}
 
     /**
      * @dev See {IERC165-supportsInterface}.
