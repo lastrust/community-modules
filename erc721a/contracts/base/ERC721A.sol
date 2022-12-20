@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 // Interfaces
+import "../interface/IBunzz.sol";
 import "../interface/IERC721A.sol";
 
 /**
@@ -23,7 +24,7 @@ import "../interface/IERC721A.sol";
  *
  * @author kazunetakeda25 (Used Azuki's v3.3)
  */
-contract ERC721A is Context, ERC165, IERC721A {
+contract ERC721A is Context, ERC165, IERC721A, IBunzz {
     using Address for address;
     using Strings for uint256;
 
