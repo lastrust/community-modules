@@ -3,7 +3,40 @@
 
 ## Overview
 
-Using AccessControl Module, users can define multiple roles and manage the user access by the roles. Users can create a new role identifier (AdminRole) that is used to grant, revoke, and check if the account has the role. You can connect the contract as the AdminRole using connectOtherContracts function.
+Contract module that allows user to implement role-based access control mechanisms.
+Its usage is straightforward: for each role that you want to define, you will create a new role identifier that is used to grant, revoke, and check if an account has that role.
+You can connect `AdminRole` using `connectOtherContracts` function.
+
+Roles are referred to by their `bytes32` identifier. These should be exposed
+in the external API and be unique. The best way to achieve this is by
+using `public constant` hash digests:
+
+```
+bytes32 public constant MY_ROLE = keccak256("MY_ROLE");
+```
+
+Roles can be used to represent a set of permissions. To restrict access to a
+function call, use {hasRole}:
+
+```
+function foo() public {
+    require(hasRole(MY_ROLE, msg.sender));
+    ...
+}
+```
+
+Roles can be granted and revoked dynamically via the {grantRole} and
+{revokeRole} functions. Each role has an associated admin role, and only
+accounts that have a role's admin role can call {grantRole} and {revokeRole}.
+
+By default, the admin role for all roles is `DEFAULT_ADMIN_ROLE`, which means
+that only accounts with this role will be able to grant or revoke other
+roles. More complex role relationships can be created by using
+{_setRoleAdmin}.
+
+WARNING: The `DEFAULT_ADMIN_ROLE` is also its own admin: it has permission to
+grant and revoke this role. Extra precautions should be taken to secure
+accounts that have been granted it.
 
 ## How to Use
 1. Deploy smart contract via `Bunzz`
