@@ -68,6 +68,10 @@ contract StakingRewards is IStakingRewards, Ownable, Pausable, ReentrancyGuard {
     rewardsDuration = duration;
   }
 
+  function connectToOtherContracts(
+    address[] memory otherContracts
+  ) external override onlyOwner {}
+
   function setPaused(bool newPaused) external onlyOwner {
     if (newPaused) {
       _pause();
