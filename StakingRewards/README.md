@@ -19,7 +19,7 @@
 
 #### setPaused
 
-Pause or unpaused contract.
+Pause or unpause contract.
 
 | name      | type |              description |
 | :-------- | :--: | -----------------------: |
@@ -70,7 +70,7 @@ Rewards rate will be calculated again from remaining distributable tokens and aw
 
 #### recoverERC20
 
-Transfer ERC20 tokens back from this contract to the owner except staking token, callable only when unpaused and by owner.
+Transfer ERC20 tokens back from this contract to the owner except staking token, callable only by owner.
 
 | name         |  type   |              description |
 | :----------- | :-----: | -----------------------: |
