@@ -564,7 +564,7 @@ event TokensClaimed(address indexed claimer, address indexed receiver, uint256 i
 ### TokensLazyMinted
 
 ```solidity
-event TokensLazyMinted(uint256 indexed startTokenId, uint256 endTokenId, string baseURI, bytes data)
+event TokensLazyMinted(address indexed minter, uint256 indexed startTokenId, uint256 endTokenId, string baseURI, bytes data)
 ```
 
 
