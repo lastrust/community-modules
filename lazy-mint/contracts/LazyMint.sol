@@ -48,7 +48,7 @@ abstract contract LazyMint is ILazyMint, BatchMintMetadata {
             baseURI_
         );
 
-        emit TokensLazyMinted(startId, startId + amount_ - 1, baseURI_, data_);
+        emit TokensLazyMinted(msg.sender, startId, startId + amount_ - 1, baseURI_, data_);
 
         return batchId;
     }
