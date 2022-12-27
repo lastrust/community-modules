@@ -12,6 +12,7 @@ interface ILazyMintWithTier {
      * @dev Emitted when tokens are lazy minted.
      */
     event TokensLazyMinted(
+        address indexed minter,
         string indexed tier,
         uint256 indexed startTokenId,
         uint256 endTokenId,
