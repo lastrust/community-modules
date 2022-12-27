@@ -98,7 +98,7 @@ Lets an authorized address lazy mint a given amount of NFTs.
 ### TokensLazyMinted
 
 ```solidity
-event TokensLazyMinted(string indexed tier, uint256 indexed startTokenId, uint256 endTokenId, string baseURI, bytes data)
+event TokensLazyMinted(address indexed minter, string indexed tier, uint256 indexed startTokenId, uint256 endTokenId, string baseURI, bytes data)
 ```
 
 
