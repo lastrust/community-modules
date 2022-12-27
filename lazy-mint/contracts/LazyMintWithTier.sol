@@ -74,6 +74,7 @@ abstract contract LazyMintWithTier is ILazyMintWithTier, BatchMintMetadata {
         _tokensInTier[tier_].push(TokenRange(startId, batchId));
 
         emit TokensLazyMinted(
+            msg.sender,
             tier_,
             startId,
             startId + amount_ - 1,
