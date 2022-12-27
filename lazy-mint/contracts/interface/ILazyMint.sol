@@ -11,6 +11,7 @@ interface ILazyMint {
      * @dev Emitted when tokens are lazy minted.
      */
     event TokensLazyMinted(
+        address indexed minter,
         uint256 indexed startTokenId,
         uint256 endTokenId,
         string baseURI,
