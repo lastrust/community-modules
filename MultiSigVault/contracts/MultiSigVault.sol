@@ -59,7 +59,7 @@ contract MultiSigVault is
      * If the main token exists and balance > 0, revert
      */
     function connectToOtherContracts(address[] calldata contracts)
-        public
+        external
         override
         onlyOwner
     {
@@ -81,7 +81,7 @@ contract MultiSigVault is
      *
      * the caller must be owner.
      */
-    function setSignerLimit(uint256 _signerLimit) public onlyOwner {
+    function setSignerLimit(uint256 _signerLimit) external onlyOwner {
         require(_signerLimit > 0, "signer limit is 0");
         require(
             _signerLimit <= getRoleMemberCount(SIGNER),
@@ -105,7 +105,7 @@ contract MultiSigVault is
         address payable _to,
         uint256 _amount,
         uint256 _unlockTime
-    ) public nonReentrant onlyRole(SIGNER) hasToken returns (uint256) {
+    ) external nonReentrant onlyRole(SIGNER) hasToken returns (uint256) {
         require(_to != address(0), "invalid to address");
         require(_amount > 0, "amount is 0");
         require(
@@ -134,7 +134,7 @@ contract MultiSigVault is
      * the caller must have `SIGNER` role.
      */
     function signTransaction(uint256 _transactionId)
-        public
+        external
         nonReentrant
         onlyRole(SIGNER)
         hasToken
@@ -160,7 +160,7 @@ contract MultiSigVault is
      * the caller must have `SIGNER` role.
      */
     function rejectTransaction(uint256 _transactionId)
-        public
+        external
         nonReentrant
         onlyRole(SIGNER)
         hasToken
@@ -189,7 +189,7 @@ contract MultiSigVault is
      * the caller must have `SIGNER` role.
      */
     function executeTransaction(uint256 _transactionId)
-        public
+        external
         nonReentrant
         onlyRole(SIGNER)
         hasToken
@@ -229,14 +229,14 @@ contract MultiSigVault is
     /**
      * @dev Returns the balance of the token in vault.
      */
-    function balance() public view hasToken returns (uint256) {
+    function balance() external view hasToken returns (uint256) {
         return token.balanceOf(address(this));
     }
 
     /**
      * @dev Emergency withdraw all balance to the owner
      */
-    function emergencyWithdraw() public onlyOwner hasToken {
+    function emergencyWithdraw() external onlyOwner hasToken {
         uint256 _amount = token.balanceOf(address(this));
         require(_amount > 0, "balance is 0");
         SafeERC20.safeTransfer(token, owner(), _amount);
@@ -246,7 +246,7 @@ contract MultiSigVault is
      * @dev Returns number of confirmations of a transaction.
      */
     function getConfirmationCount(uint256 _transactionId)
-        public
+        external
         view
         returns (uint256)
     {
@@ -257,7 +257,7 @@ contract MultiSigVault is
      * @dev Returns number of transactions
      */
     function getTransactionCount(bool pending, bool executed)
-        public
+        external
         view
         returns (uint256 count)
     {
@@ -273,7 +273,7 @@ contract MultiSigVault is
      * @dev Returns array with signer addresses, which confirmed transaction
      */
     function getConfirmations(uint256 _transactionId)
-        public
+        external
         view
         returns (address[] memory _confirmations)
     {
