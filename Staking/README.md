@@ -21,15 +21,15 @@ The rewardPerBlock is :
 rewardPerBlock = X / blockCount;
 ```
 
-1. Deploy this contract with token address, rewardPerBlock, feeWallet, maxFeePercent and harvestFeePercent.
+2. Deploy this contract with token address, rewardPerBlock, feeWallet, maxFeePercent and harvestFeePercent.
 If you don't want the harvest fee, you can use Zero address for feeWallet and set the harvestFeePercent to Zero.
-2. Deposit reward tokens for users.
+3. Deposit reward tokens for users.
 When the reward balance is 0, users can't stake. So prefer you deposit X tokens when you are going to start the staking service.
-3. Now users can stake with their tokens.
-4. Users can unstake whenever they want.
-5. Users can harvest when they want.
+4. Now users can stake with their tokens.
+5. Users can unstake whenever they want.
+6. Users can harvest when they want.
 At same time, they will pay harvest fee if the owner set the harvest fee.
-6. When users harvest their reward tokens, they can restake with the reward token.
+7. When users harvest their reward tokens, they can restake with the reward token.
 In this case, they don't pay the harvest fee.
 
 ## Functions
