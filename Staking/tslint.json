@@ -1,0 +1,6 @@
+{
+  "extends": "tslint:latest",
+  "linterOptions": {
+    "exclude": ["typechain-types", "hardhat.config.ts"]
+  }
+}
