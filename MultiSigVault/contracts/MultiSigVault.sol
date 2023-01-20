@@ -50,7 +50,7 @@ contract MultiSigVault is
      * @dev Grants `DEFAULT_ADMIN_ROLE` to `_msgSender()`.
      */
     constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     /**
@@ -81,7 +81,7 @@ contract MultiSigVault is
      *
      * the caller must be owner.
      */
-    function setSignerLimit(uint256 _signerLimit) external onlyOwner {
+    function setSignerLimit(uint256 _signerLimit) external override onlyOwner {
         require(_signerLimit > 0, "signer limit is 0");
         require(
             _signerLimit <= getRoleMemberCount(SIGNER),
@@ -105,7 +105,7 @@ contract MultiSigVault is
         address payable _to,
         uint256 _amount,
         uint256 _unlockTime
-    ) external nonReentrant onlyRole(SIGNER) hasToken returns (uint256) {
+    ) external override nonReentrant onlyRole(SIGNER) hasToken returns (uint256) {
         require(_to != address(0), "invalid to address");
         require(_amount > 0, "amount is 0");
         require(
@@ -135,6 +135,7 @@ contract MultiSigVault is
      */
     function signTransaction(uint256 _transactionId)
         external
+        override
         nonReentrant
         onlyRole(SIGNER)
         hasToken
@@ -161,6 +162,7 @@ contract MultiSigVault is
      */
     function rejectTransaction(uint256 _transactionId)
         external
+        override
         nonReentrant
         onlyRole(SIGNER)
         hasToken
@@ -190,6 +192,7 @@ contract MultiSigVault is
      */
     function executeTransaction(uint256 _transactionId)
         external
+        override
         nonReentrant
         onlyRole(SIGNER)
         hasToken
@@ -229,14 +232,14 @@ contract MultiSigVault is
     /**
      * @dev Returns the balance of the token in vault.
      */
-    function balance() external view hasToken returns (uint256) {
+    function balance() external override view hasToken returns (uint256) {
         return token.balanceOf(address(this));
     }
 
     /**
      * @dev Emergency withdraw all balance to the owner
      */
-    function emergencyWithdraw() external onlyOwner hasToken {
+    function emergencyWithdraw() external override onlyOwner hasToken {
         uint256 _amount = token.balanceOf(address(this));
         require(_amount > 0, "balance is 0");
         SafeERC20.safeTransfer(token, owner(), _amount);
