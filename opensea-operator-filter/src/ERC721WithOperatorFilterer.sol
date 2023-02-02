@@ -5,7 +5,7 @@ import {ERC721Enumerable, ERC721, IERC721} from "openzeppelin-contracts/token/ER
 import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
 import {Counters} from "openzeppelin-contracts/utils/Counters.sol";
 import {DefaultOperatorFilterer} from "./utils/DefaultOperatorFilterer.sol";
-import {ERC2981} from "openzeppelin-contracts/token/common/ERC2981.sol";
+import {ERC2981} from "./utils/ERC2981.sol";
 
 
 /**
