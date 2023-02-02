@@ -23,7 +23,7 @@ import "./util/Math.sol";
  * By default, token balance does not account for voting power. This makes transfers cheaper. The downside is that it
  * requires users to delegate to themselves in order to activate checkpoints and have their voting power tracked.
  */
-abstract contract ERC20Votes is IVotes, ERC20Permit {
+contract ERC20Votes is IVotes, ERC20Permit {
     struct Checkpoint {
         uint32 fromBlock;
         uint224 votes;
