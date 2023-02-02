@@ -1,0 +1,23 @@
+{
+  "name": "bunzz-kyberadapter",
+  "version": "1.0.0",
+  "description": "Bunzz KyberAdapter Module",
+  "author": "Top-Kraken",
+  "license": "MIT",
+  "scripts": {
+    "clean": "npx hardhat clean",
+    "compile": "npx hardhat compile",
+    "build": "npm run clean && npm run compile",
+    "test": "npx hardhat test",
+    "deploy": "npx hardhat run scripts/deploy.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "@openzeppelin/contracts": "^4.3.2",
+    "dotenv": "^16.0.3",
+    "hardhat": "^2.12.4",
+    "hardhat-gas-reporter": "^1.0.9",
+    "typescript": "^4.9.4",
+    "web3": "^1.8.1"
+  }
+}
