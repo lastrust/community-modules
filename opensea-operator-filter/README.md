@@ -149,6 +149,8 @@ This module provides ERC721 contract to intergrate with [OperatorFilterRegistry]
 
 Using this module, you can easily create a NFT collection that make best efforts to filter transfers from operators known to not respect creator earnings.
 
+To learn more about NFT token is used in this module, please check [NFT (Custom-URI) Created by bunzz](https://app.bunzz.dev/module-templates/b9754505-40f2-4224-b11f-5a08e152fe97)
+
 ## How to use
 
 ### General steps
