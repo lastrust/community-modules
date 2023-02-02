@@ -6,4 +6,4 @@ artifacts/
 typechain-types/
 .env
 out/
-lib/
+
