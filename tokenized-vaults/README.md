@@ -8,6 +8,8 @@ Tokenized Vaults have a lack of standardization leading to diverse implementatio
 
 A standard for tokenized Vaults will lower the integration effort for yield-bearing vaults, while creating more consistent and robust implementation patterns.
 
+![image](https://user-images.githubusercontent.com/121101224/216319426-7cc00305-4f2e-49a0-94bb-b31c6a933235.png)
+
 # ERC4626
 
 
