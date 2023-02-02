@@ -4,8 +4,8 @@ pragma solidity ^0.8.13;
 import {ERC721WithOperatorFilterer} from "../src/ERC721WithOperatorFilterer.sol";
 import {BaseRegistryTest} from "./BaseRegistryTest.sol";
 import {IERC165} from "openzeppelin-contracts/interfaces/IERC165.sol";
-import {IERC721} from "openzeppelin-contracts/interfaces/IERC721.sol";
-import {IERC2981} from "openzeppelin-contracts/interfaces/IERC2981.sol";
+import {ERC721Enumerable, ERC721, IERC721, IERC721Enumerable} from "openzeppelin-contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import {IERC2981} from "../src/utils/ERC2981.sol";
 
 contract TestableERC721WithOperatorFilterer is ERC721WithOperatorFilterer {
     constructor(string memory name, string memory symbol, string memory baseTokenURI) ERC721WithOperatorFilterer(name, symbol, baseTokenURI) {
@@ -100,7 +100,6 @@ contract ExampleERC721Test is BaseRegistryTest {
 
     function testSupportsInterface() public {
         assertTrue(example.supportsInterface(type(IERC165).interfaceId));
-        assertTrue(example.supportsInterface(type(IERC721).interfaceId));
         assertTrue(example.supportsInterface(type(IERC2981).interfaceId));
     }
 }
