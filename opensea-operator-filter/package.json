@@ -3,7 +3,7 @@
     "author": "Simon Moon",
     "license": "MIT",
     "dependencies": {
-        "@openzeppelin/contracts": "^4.3.2"
+        "@openzeppelin/contracts": "4.3.2"
     },
     "files": [
         "node_modules",
