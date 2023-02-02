@@ -3,10 +3,11 @@ pragma solidity ^0.8.0;
 
 // Openzeppelin
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+// Utils
+import "./util/IVotes.sol";
+import "./util/Math.sol";
 
 /**
  * @title ERC20Votes
