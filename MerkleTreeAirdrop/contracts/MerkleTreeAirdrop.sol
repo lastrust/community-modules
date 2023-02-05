@@ -1,22 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {MerkleDistributor} from "./MerkleDistributor.sol";
 import {IBunzz} from "./interfaces/IBunzz.sol";
 
-contract MerkleTreeAirdrop is MerkleDistributor {
+contract MerkleTreeAirdrop is IBunzz, Ownable, MerkleDistributor {
   using SafeERC20 for IERC20;
 
   event Claimed(uint256 index, address account, uint256 amount);
 
-  address public immutable token;
+  address public token;
 
   constructor(address token_, bytes32 merkleRoot_) {
     token = token_;
     __MerkleDistributor_init(merkleRoot_);
+  }
+
+  function connectToOtherContracts(
+    address[] calldata contracts
+  ) external override onlyOwner {
+    require(contracts.length > 0, "No contract to connect");
+    token = contracts[0];
   }
 
   /**

@@ -3,11 +3,11 @@
 ## Overview
 
 Requires a list of wallet address and root hash which are the leaves and merkle proofs needed to verify that a given data exists for that address in the tree.
-Contract acts as Airdrop and only sends out tokens on data verification i.e merkle proof and appropriate arguments used to build the merkle tree for that user.
+Contract acts as Airdrop for ERC20 and only sends out tokens on data verification i.e merkle proof and appropriate arguments used to build the merkle tree for that user.
 
 ## How to use
 
-1. Prepare airdrop token.
+1. Prepare an ERC20 token as an airdrop token. You can use existing token or deploy a new ERC20 token on DApps page.
 2. Prepare the whitelist and their drop amount, generate the merkle tree and output to the JSON file. Check JSON file format in `test/resources/airdrop/testMerkle.json`.
    It contains the merkle root, total token amount for airdrop, individual token amounts and list of merkle proof.
 3. Deploy `MerkleTreeAirdrop` contract with merkle root.

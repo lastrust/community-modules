@@ -1,5 +1,5 @@
 {
-  "name": "MerkleTreeAirdrop",
+  "name": "MerkleTreeAirdropForERC20",
   "scripts": {
     "compile": "hardhat compile",
     "typechain": "hardhat typechain",
@@ -14,7 +14,6 @@
     "hardhat": "2.12.3"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "4.8.0",
-    "@openzeppelin/contracts-upgradeable": "^4.8.1"
+    "@openzeppelin/contracts": "4.3.2"
   }
 }

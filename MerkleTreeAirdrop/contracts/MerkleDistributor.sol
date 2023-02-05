@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
+import "./oz/MerkleProofUpgradeable.sol";
 
 abstract contract MerkleDistributor {
   bytes32 public merkleRoot;
