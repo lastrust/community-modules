@@ -231,7 +231,7 @@ contract StakingERC721 is
    * @notice Claim rewards tokens and unstake staked amount.
    * @dev Callable only when unpaused.
    */
-  function exit(uint256[] memory tokenIds) public override whenNotPaused {
+  function exit(uint256[] memory tokenIds) external override whenNotPaused {
     unstake(tokenIds);
     claim();
   }
@@ -245,7 +245,7 @@ contract StakingERC721 is
    */
   function fund(
     uint256 reward
-  ) public onlyOwner whenNotPaused updateReward(address(0)) {
+  ) external onlyOwner whenNotPaused updateReward(address(0)) {
     if (block.timestamp >= periodFinish) {
       rewardRate = reward / rewardsDuration;
     } else {
