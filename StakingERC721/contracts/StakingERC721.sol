@@ -158,7 +158,7 @@ contract StakingERC721 is
    */
   function stake(
     uint256[] memory tokenIds
-  ) public nonReentrant whenNotPaused updateReward(msg.sender) {
+  ) public override nonReentrant whenNotPaused updateReward(msg.sender) {
     if (tokenIds.length == 0) {
       revert NoTokenIds();
     }
@@ -184,7 +184,7 @@ contract StakingERC721 is
    */
   function unstake(
     uint256[] memory tokenIds
-  ) public nonReentrant whenNotPaused updateReward(msg.sender) {
+  ) public override nonReentrant whenNotPaused updateReward(msg.sender) {
     if (tokenIds.length == 0) {
       revert NoTokenIds();
     }
@@ -212,7 +212,13 @@ contract StakingERC721 is
    * @notice Claim rewards tokens, callable only when unpaused.
    * @dev Callable only when unpaused
    */
-  function claim() public nonReentrant whenNotPaused updateReward(msg.sender) {
+  function claim()
+    public
+    override
+    nonReentrant
+    whenNotPaused
+    updateReward(msg.sender)
+  {
     uint256 reward = rewards[msg.sender];
     if (reward > 0) {
       rewards[msg.sender] = 0;
@@ -225,7 +231,7 @@ contract StakingERC721 is
    * @notice Claim rewards tokens and unstake staked amount.
    * @dev Callable only when unpaused.
    */
-  function exit(uint256[] memory tokenIds) public whenNotPaused {
+  function exit(uint256[] memory tokenIds) public override whenNotPaused {
     unstake(tokenIds);
     claim();
   }
@@ -335,7 +341,7 @@ contract StakingERC721 is
    * @param account User address
    * @return Returns balance of staked amount per user.
    */
-  function balanceOf(address account) external view returns (uint256) {
+  function balanceOf(address account) external view override returns (uint256) {
     return balances[account];
   }
 
@@ -343,14 +349,14 @@ contract StakingERC721 is
    * @return Returns last time to calculate rewards.
    * If now is less than the last time, returns now.
    */
-  function lastTimeRewardApplicable() external view returns (uint256) {
+  function lastTimeRewardApplicable() external view override returns (uint256) {
     return _lastTimeRewardApplicable();
   }
 
   /**
    * @return Returns total amount of calculated rewards.
    */
-  function rewardPerToken() external view returns (uint256) {
+  function rewardPerToken() external view override returns (uint256) {
     return _rewardPerToken();
   }
 
@@ -358,14 +364,14 @@ contract StakingERC721 is
    * @param account User address
    * @return Returns earned rewards per user.
    */
-  function earned(address account) external view returns (uint256) {
+  function earned(address account) external view override returns (uint256) {
     return _earned(account);
   }
 
   /**
    * @return Returns total rewards amount for current duration.
    */
-  function getRewardForDuration() external view returns (uint256) {
+  function getRewardForDuration() external view override returns (uint256) {
     return rewardRate * rewardsDuration;
   }
 }
