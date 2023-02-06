@@ -27,22 +27,6 @@ function CALLBACK_SUCCESS() external view returns (bytes32)
 |---|---|---|
 | _0 | bytes32 | undefined |
 
-### connectToOtherContracts
-
-```solidity
-function connectToOtherContracts(address[] _contracts) external nonpayable
-```
-
-
-
-*Connect to other contracts*
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _contracts | address[] | undefined |
-
 ### fee
 
 ```solidity

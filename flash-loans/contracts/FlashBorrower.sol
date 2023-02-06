@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // Interfaces
-import "./interface/IBunzz.sol";
 import "./interface/IERC3156FlashBorrower.sol";
 import "./interface/IERC3156FlashLender.sol";
 
@@ -13,7 +12,7 @@ import "./interface/IERC3156FlashLender.sol";
  * @title FlashBorrower
  * @author kazunetakeda25
  */
-contract FlashBorrower is IERC3156FlashBorrower, IBunzz, Ownable {
+contract FlashBorrower is IERC3156FlashBorrower, Ownable {
     enum Action {
         NORMAL,
         STEAL,
@@ -31,15 +30,6 @@ contract FlashBorrower is IERC3156FlashBorrower, IBunzz, Ownable {
     constructor(IERC3156FlashLender lender_) {
         lender = lender_;
     }
-
-    /**
-     * @dev Connect to other contracts
-     */
-    function connectToOtherContracts(address[] calldata _contracts)
-        public
-        override
-        onlyOwner
-    {}
 
     /// @dev ERC-3156 Flash loan callback
     function onFlashLoan(

@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // Interfaces
-import "./interface/IBunzz.sol";
 import "./interface/IERC3156FlashBorrower.sol";
 import "./interface/IERC3156FlashLender.sol";
 
@@ -15,7 +14,7 @@ import "./interface/IERC3156FlashLender.sol";
  * @dev Extension of {ERC20} that allows flash minting.
  * @author kazunetakeda25
  */
-contract FlashMinter is ERC20, IERC3156FlashLender, IBunzz, Ownable {
+contract FlashMinter is ERC20, IERC3156FlashLender, Ownable {
     bytes32 public constant CALLBACK_SUCCESS =
         keccak256("ERC3156FlashBorrower.onFlashLoan");
     uint256 public fee; //  1 == 0.0001 %.
@@ -30,15 +29,6 @@ contract FlashMinter is ERC20, IERC3156FlashLender, IBunzz, Ownable {
     ) ERC20(name, symbol) {
         fee = fee_;
     }
-
-    /**
-     * @dev Connect to other contracts
-     */
-    function connectToOtherContracts(address[] calldata _contracts)
-        public
-        override
-        onlyOwner
-    {}
 
     /**
      * @dev The amount of currency available to be lended.

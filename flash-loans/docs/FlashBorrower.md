@@ -27,22 +27,6 @@ function approveRepayment(address token, uint256 amount) external nonpayable
 | token | address | undefined |
 | amount | uint256 | undefined |
 
-### connectToOtherContracts
-
-```solidity
-function connectToOtherContracts(address[] _contracts) external nonpayable
-```
-
-
-
-*Connect to other contracts*
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _contracts | address[] | undefined |
-
 ### flashAmount
 
 ```solidity

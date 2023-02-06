@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // Interfaices
-import "./interface/IBunzz.sol";
 import "./interface/IERC3156FlashBorrower.sol";
 import "./interface/IERC3156FlashLender.sol";
 
@@ -14,7 +13,7 @@ import "./interface/IERC3156FlashLender.sol";
  * @dev Extension of {ERC20} that allows flash lending.
  * @author kazunetakeda25
  */
-contract FlashLender is IERC3156FlashLender, IBunzz, Ownable {
+contract FlashLender is IERC3156FlashLender, Ownable {
     bytes32 public constant CALLBACK_SUCCESS =
         keccak256("ERC3156FlashBorrower.onFlashLoan");
     mapping(address => bool) public supportedTokens;
@@ -30,15 +29,6 @@ contract FlashLender is IERC3156FlashLender, IBunzz, Ownable {
         }
         fee = fee_;
     }
-
-    /**
-     * @dev Connect to other contracts
-     */
-    function connectToOtherContracts(address[] calldata _contracts)
-        public
-        override
-        onlyOwner
-    {}
 
     /**
      * @dev Loan `amount` tokens to `receiver`, and takes it back plus a `flashFee` after the callback.
