@@ -573,22 +573,6 @@ function balanceOf(address account) external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### connectToOtherContracts
-
-```solidity
-function connectToOtherContracts(address[] _contracts) external nonpayable
-```
-
-
-
-*Connect to other contracts*
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _contracts | address[] | undefined |
-
 ### decimals
 
 ```solidity
