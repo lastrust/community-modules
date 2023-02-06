@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../base/ERC721A.sol";
+import "../ERC721A.sol";
 
 contract ERC721AMock is ERC721A {
     constructor(string memory name_, string memory symbol_)
