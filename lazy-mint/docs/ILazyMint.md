@@ -52,6 +52,7 @@ event TokensLazyMinted(address indexed minter, uint256 indexed startTokenId, uin
 
 | Name | Type | Description |
 |---|---|---|
+| minter `indexed` | address | undefined |
 | startTokenId `indexed` | uint256 | undefined |
 | endTokenId  | uint256 | undefined |
 | baseURI  | string | undefined |

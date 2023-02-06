@@ -121,22 +121,6 @@ Lets an address claim multiple lazy minted NFTs at once to a recipient. This fun
 | to_ | address | (address) The recipient of the NFT to mint. |
 | quantity_ | uint256 | (uint256) The number of NFTs to mint. |
 
-### connectToOtherContracts
-
-```solidity
-function connectToOtherContracts(address[] contracts) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| contracts | address[] | undefined |
-
 ### getApproved
 
 ```solidity
@@ -205,23 +189,6 @@ Lets an authorized address lazy mint a given amount of NFTs.
 | Name | Type | Description |
 |---|---|---|
 | batchId | uint256 | (uint256) A unique integer identifier for the batch of NFTs lazy minted together. |
-
-### lazyMintContract
-
-```solidity
-function lazyMintContract() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
 
 ### multicall
 
@@ -367,7 +334,7 @@ function safeTransferFrom(address from, address to, uint256 tokenId) external no
 ### safeTransferFrom
 
 ```solidity
-function safeTransferFrom(address from, address to, uint256 tokenId, bytes data) external nonpayable
+function safeTransferFrom(address from, address to, uint256 tokenId, bytes _data) external nonpayable
 ```
 
 
@@ -381,7 +348,7 @@ function safeTransferFrom(address from, address to, uint256 tokenId, bytes data)
 | from | address | undefined |
 | to | address | undefined |
 | tokenId | uint256 | undefined |
-| data | bytes | undefined |
+| _data | bytes | undefined |
 
 ### setApprovalForAll
 
@@ -591,7 +558,7 @@ event TokensClaimed(address indexed claimer, address indexed receiver, uint256 i
 ### TokensLazyMinted
 
 ```solidity
-event TokensLazyMinted(uint256 indexed startTokenId, uint256 endTokenId, string baseURI, bytes data)
+event TokensLazyMinted(address indexed minter, uint256 indexed startTokenId, uint256 endTokenId, string baseURI, bytes data)
 ```
 
 
@@ -602,6 +569,7 @@ event TokensLazyMinted(uint256 indexed startTokenId, uint256 endTokenId, string 
 
 | Name | Type | Description |
 |---|---|---|
+| minter `indexed` | address | undefined |
 | startTokenId `indexed` | uint256 | undefined |
 | endTokenId  | uint256 | undefined |
 | baseURI  | string | undefined |

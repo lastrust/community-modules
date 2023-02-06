@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 // Interfaces
-import "../interface/IBunzz.sol";
 import "../interface/IERC721Claimable.sol";
 // Base
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -38,7 +37,6 @@ contract ERC721LazyMint is
     IERC721Claimable,
     BatchMintMetadata,
     LazyMint,
-    IBunzz,
     Multicall,
     Ownable,
     ReentrancyGuard
@@ -145,12 +143,6 @@ contract ERC721LazyMint is
 
         emit TokensClaimed(msg.sender, to_, startTokenId, quantity_);
     }
-
-    function connectToOtherContracts(address[] calldata contracts)
-        external
-        override
-        onlyOwner
-    {}
 
     /**
      * @notice Mints tokens to receiver on claim.
