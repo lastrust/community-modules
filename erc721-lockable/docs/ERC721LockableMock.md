@@ -65,22 +65,6 @@ function burn(uint256 tokenId) external nonpayable
 |---|---|---|
 | tokenId | uint256 | undefined |
 
-### connectToOtherContracts
-
-```solidity
-function connectToOtherContracts(address[] _contracts) external nonpayable
-```
-
-
-
-*Connect to other contracts*
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _contracts | address[] | undefined |
-
 ### exists
 
 ```solidity

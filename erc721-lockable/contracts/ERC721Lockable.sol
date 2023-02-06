@@ -3,10 +3,10 @@ pragma solidity ^0.8.0;
 
 // Openzeppelin
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 // Interfaces
-import "../interface/IBunzz.sol";
-import "../interface/IERC721Lockable.sol";
+import "./interface/IERC721Lockable.sol";
+// ERC721
+import "./token/ERC721.sol";
 
 /**
  * @title ERC721Lockable
@@ -19,7 +19,7 @@ import "../interface/IERC721Lockable.sol";
  * @dev Implementation ERC721 Lockable Token
  * @author kazunetakeda25
  */
-abstract contract ERC721Lockable is ERC721, IERC721Lockable, IBunzz, Ownable {
+contract ERC721Lockable is ERC721, IERC721Lockable, Ownable {
     // Mapping from token ID to unlock time
     mapping(uint256 => uint256) public lockedTokens;
 
@@ -28,13 +28,8 @@ abstract contract ERC721Lockable is ERC721, IERC721Lockable, IBunzz, Ownable {
     // Mapping from owner to lock operator approvals
     mapping(address => mapping(address => bool)) private _lockOperatorApprovals;
 
-    /**
-     * @dev Connect to other contracts
-     */
-    function connectToOtherContracts(address[] calldata _contracts)
-        public
-        override
-        onlyOwner
+    constructor(string memory name_, string memory symbol_)
+        ERC721(name_, symbol_)
     {}
 
     /**

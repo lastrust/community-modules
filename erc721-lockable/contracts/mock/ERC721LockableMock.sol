@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// Openzeppelin
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "../base/ERC721Lockable.sol";
+// ERC721Enumerable
+import "../token/ERC721Enumerable.sol";
+// ERC721Lockable
+import "../ERC721Lockable.sol";
 
 contract ERC721LockableMock is ERC721Enumerable, ERC721Lockable {
     constructor(string memory name, string memory symbol)
-        ERC721(name, symbol)
+        ERC721Lockable(name, symbol)
     {}
 
     function exists(uint256 tokenId) public view returns (bool) {
