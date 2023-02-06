@@ -2,14 +2,13 @@
 pragma solidity ^0.8.0;
 
 // Interfaces
-import "./interface/IBunzz.sol";
 import "./interface/IMinimalForwarder.sol";
 // Openzeppelin
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract MinimalForwarder is IBunzz, IMinimalForwarder, EIP712, Ownable {
+contract MinimalForwarder is IMinimalForwarder, EIP712, Ownable {
     using ECDSA for bytes32;
 
     bytes32 private constant _TYPEHASH =
@@ -78,13 +77,5 @@ contract MinimalForwarder is IBunzz, IMinimalForwarder, EIP712, Ownable {
         }
 
         return (success, returndata);
-    }
-
-    function connectToOtherContracts(address[] calldata contracts)
-        external
-        override
-        onlyOwner
-    {
-        minimalForwarderContract = contracts[0];
     }
 }
