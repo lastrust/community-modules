@@ -23,9 +23,6 @@ describe('Test Base64Wrapper', function () {
         await base64Wrapper.deployed()
     })
 
-    it('check deployment', async function () {
-    })
-
     it('empty bytes', async function () {
         expect(await base64Wrapper.encode([])).to.equal('')
     })

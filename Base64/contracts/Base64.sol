@@ -10,7 +10,8 @@ library Base64 {
     /**
      * @dev Base64 Encoding/Decoding Table
      */
-    string internal constant _TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    string internal constant _TABLE =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     /**
      * @dev Converts a `bytes` to its Bytes64 `string` representation.
@@ -60,13 +61,22 @@ library Base64 {
                 // and finally write it in the result pointer but with a left shift
                 // of 256 (1 byte) - 8 (1 ASCII char) = 248 bits
 
-                mstore8(resultPtr, mload(add(tablePtr, and(shr(18, input), 0x3F))))
+                mstore8(
+                    resultPtr,
+                    mload(add(tablePtr, and(shr(18, input), 0x3F)))
+                )
                 resultPtr := add(resultPtr, 1) // Advance
 
-                mstore8(resultPtr, mload(add(tablePtr, and(shr(12, input), 0x3F))))
+                mstore8(
+                    resultPtr,
+                    mload(add(tablePtr, and(shr(12, input), 0x3F)))
+                )
                 resultPtr := add(resultPtr, 1) // Advance
 
-                mstore8(resultPtr, mload(add(tablePtr, and(shr(6, input), 0x3F))))
+                mstore8(
+                    resultPtr,
+                    mload(add(tablePtr, and(shr(6, input), 0x3F)))
+                )
                 resultPtr := add(resultPtr, 1) // Advance
 
                 mstore8(resultPtr, mload(add(tablePtr, and(input, 0x3F))))
@@ -115,27 +125,22 @@ library Base64 {
                 let end := add(data, dataLength)
                 let decodedLength := mul(shr(2, dataLength), 3)
 
-                for {
-
-                } 1 {
-
-                } {
+                switch and(dataLength, 3)
+                case 0 {
                     // If padded.
-                    if iszero(and(dataLength, 3)) {
-                        let t := xor(mload(end), 0x3d3d)
-                        // forgefmt: disable-next-item
-                        decodedLength := sub(
-                            decodedLength,
-                            add(iszero(byte(30, t)), iszero(byte(31, t)))
-                        )
-                        break
-                    }
+                    let t := xor(mload(end), 0x3d3d)
+                    // forgefmt: disable-next-item
+                    decodedLength := sub(
+                        decodedLength,
+                        add(iszero(byte(30, t)), iszero(byte(31, t)))
+                    )
+                }
+                default {
                     // If non-padded.
                     decodedLength := add(
                         decodedLength,
                         sub(and(dataLength, 3), 1)
                     )
-                    break
                 }
                 result := mload(0x40)
 
@@ -160,7 +165,7 @@ library Base64 {
 
                 for {
 
-                } 1 {
+                } lt(data, end) {
 
                 } {
                     // Read 4 bytes.
@@ -190,10 +195,6 @@ library Base64 {
                     )
 
                     ptr := add(ptr, 3)
-
-                    if iszero(lt(data, end)) {
-                        break
-                    }
                 }
 
                 // Allocate the memory for the string.
