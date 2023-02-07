@@ -3,7 +3,7 @@
 ## Overview
 > Boneh–Lynn–Shacham (BLS) signature scheme on Barreto-Naehrig 254 bit curve (BN-254)
 
-BLS signature aggregation reduces the size of signature data to store on-chain
+BLS signature aggregation reduces the size of signature data to store on-chain (https://en.wikipedia.org/wiki/BLS_digital_signature)
 
 _points on G1 are used for signatures and messages, and on G2 for public keys_
 
