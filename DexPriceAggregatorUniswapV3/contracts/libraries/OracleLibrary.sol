@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "@uniswap/v3-core/contracts/libraries/LowGasSafeMath.sol";
+import "../interfaces/IUniswapV3Pool.sol";
+import "./LowGasSafeMath.sol";
 import "./FullMath.sol";
 import "./TickMath.sol";
 import "./PoolAddress.sol";
