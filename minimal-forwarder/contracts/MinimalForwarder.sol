@@ -17,8 +17,6 @@ contract MinimalForwarder is IMinimalForwarder, EIP712, Ownable {
         );
     mapping(address => uint256) private _nonces;
 
-    address public minimalForwarderContract;
-
     constructor(string memory name_, string memory version_)
         EIP712(name_, version_)
     {}
