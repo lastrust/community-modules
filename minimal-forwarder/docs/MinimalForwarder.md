@@ -56,23 +56,6 @@ function getNonce(address from_) external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### minimalForwarderContract
-
-```solidity
-function minimalForwarderContract() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
-
 ### owner
 
 ```solidity
