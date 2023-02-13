@@ -26,8 +26,8 @@ contract ERC721WithOperatorFilterer is ERC721Enumerable, ERC2981, DefaultOperato
     string private baseURI;
 
 
-    constructor(string memory name, string memory symbol, string memory baseTokenURI) ERC721(name, symbol) {
-        baseURI = baseTokenURI;
+    constructor(string memory name_, string memory symbol_, string memory baseTokenURI_) ERC721(name_, symbol_) {
+        baseURI = baseTokenURI_;
     }
 
 
@@ -53,8 +53,8 @@ contract ERC721WithOperatorFilterer is ERC721Enumerable, ERC2981, DefaultOperato
 
 
     function safeMint(address to, string memory metadataURI) external onlyOwner {
-        _safeMint(to, _tokenIds.current());
         _setTokenURI(_tokenIds.current(), metadataURI);
+        _safeMint(to, _tokenIds.current());
         _tokenIds.increment();
     }
 
