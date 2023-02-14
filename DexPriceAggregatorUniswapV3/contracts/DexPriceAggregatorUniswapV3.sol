@@ -25,6 +25,11 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         address _weth,
         uint24 _defaultPoolFee
     ) Ownable() {
+        require(
+            _uniswapV3Factory != address(0),
+            "Can't set UniswapV3Factory address as 0"
+        );
+        require(_weth != address(0), "Can't set WETH address as 0");
         uniswapV3Factory = _uniswapV3Factory;
         weth = _weth;
         defaultPoolFee = _defaultPoolFee;
@@ -40,7 +45,7 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         uint256 _amountIn,
         address _tokenOut,
         uint256 _twapPeriod
-    ) public view override returns (uint256 amountOut) {
+    ) external view override returns (uint256 amountOut) {
         if (_tokenIn == weth) {
             return ethToAsset(_amountIn, _tokenOut, _twapPeriod);
         } else if (_tokenOut == weth) {

@@ -52,13 +52,13 @@ contract MockUniswapV3Pool {
         external
         view
         returns (
-            uint160 sqrtPriceX96,
+            uint160,
             int24 tick,
             uint16 observationIndex,
             uint16 observationCardinality,
-            uint16 observationCardinalityNext,
-            uint8 feeProtocol,
-            bool unlocked
+            uint16,
+            uint8,
+            bool
         )
     {
         tick = _slot0.tick;
@@ -73,7 +73,7 @@ contract MockUniswapV3Pool {
         returns (
             uint32 blockTimestamp,
             int56 tickCumulative,
-            uint160 secondsPerLiquidityCumulativeX128,
+            uint160,
             bool initialized
         )
     {

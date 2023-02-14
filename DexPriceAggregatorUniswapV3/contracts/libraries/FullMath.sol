@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 library FullMath {
-    error DenominatorLessOrEqualThanProd();
-
     /**
      * @dev Multiplication followed by division, without overflow of intermediate values. Lack of overflow is guaranteed if numerator <= denominator.
      * @return partialAmount target * numerator / denominator
@@ -39,7 +37,7 @@ library FullMath {
 
         // Make sure the result is less than 2**256.
         // Also prevents denominator == 0
-        if (denominator <= prod1) revert DenominatorLessOrEqualThanProd();
+        require(denominator > prod1);
 
         ///////////////////////////////////////////////
         // 512 by 256 division.
