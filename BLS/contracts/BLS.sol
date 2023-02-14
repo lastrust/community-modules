@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "./interfaces/IBLS.sol";
-import {ModexpInverse, ModexpSqrt} from "./libs/ModExp.sol";
+import "./libs/ModexpInverse.sol";
+import "./libs/ModexpSqrt.sol";
 
 /**
     @title  Boneh–Lynn–Shacham (BLS) signature scheme on Barreto-Naehrig 254 bit curve (BN-254)
@@ -10,6 +11,9 @@ import {ModexpInverse, ModexpSqrt} from "./libs/ModExp.sol";
     @dev points on G1 are used for signatures and messages, and on G2 for public keys
  */
 contract BLS is IBLS {
+    using ModexpSqrt for uint256;
+    using ModexpInverse for uint256;
+
     // Field order
     // prettier-ignore
     uint256 private constant N = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
@@ -39,36 +43,77 @@ contract BLS is IBLS {
     /**
      * @inheritdoc IBLS
      */
-    function verifySingle(
-        uint256[2] calldata signature,
-        uint256[4] calldata pubkey,
-        uint256[2] calldata message
-    ) external view returns (bool, bool) {
-        uint256[12] memory input = [
-            signature[0],
-            signature[1],
-            N_G2_X1,
-            N_G2_X0,
-            N_G2_Y1,
-            N_G2_Y0,
-            message[0],
-            message[1],
-            pubkey[1],
-            pubkey[0],
-            pubkey[3],
-            pubkey[2]
-        ];
-        uint256[1] memory out;
-
-        bool callSuccess;
+    function hashToField(bytes32 domain, bytes calldata messages)
+        external
+        view
+        override
+        returns (uint256[2] memory)
+    {
+        bytes memory _msg = this.expandMsgTo96(domain, messages);
+        uint256 u0;
+        uint256 u1;
+        uint256 a0;
+        uint256 a1;
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            callSuccess := staticcall(gas(), 8, input, 384, out, 0x20)
+            let p := add(_msg, 24)
+            u1 := and(mload(p), MASK24)
+            p := add(_msg, 48)
+            u0 := and(mload(p), MASK24)
+            a0 := addmod(mulmod(u1, T24, N), u0, N)
+            p := add(_msg, 72)
+            u1 := and(mload(p), MASK24)
+            p := add(_msg, 96)
+            u0 := and(mload(p), MASK24)
+            a1 := addmod(mulmod(u1, T24, N), u0, N)
         }
-        if (!callSuccess) {
-            return (false, false);
+        return [a0, a1];
+    }
+
+    /**
+     * @inheritdoc IBLS
+     */
+    function hashToPoint(bytes32 domain, bytes calldata message)
+        external
+        view
+        override
+        returns (uint256[2] memory)
+    {
+        uint256[2] memory u = this.hashToField(domain, message);
+        uint256[2] memory p0 = this.mapToPoint(u[0]);
+        uint256[2] memory p1 = this.mapToPoint(u[1]);
+        uint256[4] memory bnAddInput;
+        bnAddInput[0] = p0[0];
+        bnAddInput[1] = p0[1];
+        bnAddInput[2] = p1[0];
+        bnAddInput[3] = p1[1];
+        bool success;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            success := staticcall(sub(gas(), 2000), 6, bnAddInput, 128, p0, 64)
+            switch success
+            case 0 {
+                invalid()
+            }
         }
-        return (out[0] != 0, true);
+        require(success, "BLS: bn add call failed");
+        return p0;
+    }
+
+    /**
+     * @inheritdoc IBLS
+     */
+    function isValidSignature(uint256[2] calldata signature)
+        external
+        view
+        override
+        returns (bool)
+    {
+        if ((signature[0] >= N) || (signature[1] >= N)) {
+            return false;
+        } else {
+            return this.isOnCurveG1(signature);
+        }
     }
 
     /**
@@ -78,7 +123,7 @@ contract BLS is IBLS {
         uint256[2] calldata signature,
         uint256[4][] calldata pubkeys,
         uint256[2][] calldata messages
-    ) external view returns (bool checkResult, bool callSuccess) {
+    ) external view override returns (bool checkResult, bool callSuccess) {
         uint256 size = pubkeys.length;
         // solhint-disable-next-line reason-string
         require(size > 0, "BLS: number of public key is zero");
@@ -129,7 +174,7 @@ contract BLS is IBLS {
         uint256[2] calldata signature,
         uint256[4][] calldata pubkeys,
         uint256[2] calldata message
-    ) external view returns (bool checkResult, bool callSuccess) {
+    ) external view override returns (bool checkResult, bool callSuccess) {
         uint256 size = pubkeys.length;
         // solhint-disable-next-line reason-string
         require(size > 0, "BLS: number of public key is zero");
@@ -171,235 +216,36 @@ contract BLS is IBLS {
     /**
      * @inheritdoc IBLS
      */
-    function hashToPoint(bytes32 domain, bytes memory message)
-        external
-        view
-        returns (uint256[2] memory)
-    {
-        uint256[2] memory u = this.hashToField(domain, message);
-        uint256[2] memory p0 = this.mapToPoint(u[0]);
-        uint256[2] memory p1 = this.mapToPoint(u[1]);
-        uint256[4] memory bnAddInput;
-        bnAddInput[0] = p0[0];
-        bnAddInput[1] = p0[1];
-        bnAddInput[2] = p1[0];
-        bnAddInput[3] = p1[1];
-        bool success;
+    function verifySingle(
+        uint256[2] calldata signature,
+        uint256[4] calldata pubkey,
+        uint256[2] calldata message
+    ) external view override returns (bool, bool) {
+        uint256[12] memory input = [
+            signature[0],
+            signature[1],
+            N_G2_X1,
+            N_G2_X0,
+            N_G2_Y1,
+            N_G2_Y0,
+            message[0],
+            message[1],
+            pubkey[1],
+            pubkey[0],
+            pubkey[3],
+            pubkey[2]
+        ];
+        uint256[1] memory out;
+
+        bool callSuccess;
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            success := staticcall(sub(gas(), 2000), 6, bnAddInput, 128, p0, 64)
-            switch success
-            case 0 {
-                invalid()
-            }
+            callSuccess := staticcall(gas(), 8, input, 384, out, 0x20)
         }
-        require(success, "BLS: bn add call failed");
-        return p0;
-    }
-
-    /**
-     * @inheritdoc IBLS
-     */
-    function mapToPoint(uint256 _x)
-        external
-        pure
-        returns (uint256[2] memory p)
-    {
-        // solhint-disable-next-line reason-string
-        require(_x < N, "mapToPointFT: invalid field element");
-        uint256 x = _x;
-
-        (, bool decision) = sqrt(x);
-
-        uint256 a0 = mulmod(x, x, N);
-        a0 = addmod(a0, 4, N);
-        uint256 a1 = mulmod(x, Z0, N);
-        uint256 a2 = mulmod(a1, a0, N);
-        a2 = inverse(a2);
-        a1 = mulmod(a1, a1, N);
-        a1 = mulmod(a1, a2, N);
-
-        // x1
-        a1 = mulmod(x, a1, N);
-        x = addmod(Z1, N - a1, N);
-        // check curve
-        a1 = mulmod(x, x, N);
-        a1 = mulmod(a1, x, N);
-        a1 = addmod(a1, 3, N);
-        bool found;
-        (a1, found) = sqrt(a1);
-        if (found) {
-            if (!decision) {
-                a1 = N - a1;
-            }
-            return [x, a1];
+        if (!callSuccess) {
+            return (false, false);
         }
-
-        // x2
-        x = N - addmod(x, 1, N);
-        // check curve
-        a1 = mulmod(x, x, N);
-        a1 = mulmod(a1, x, N);
-        a1 = addmod(a1, 3, N);
-        (a1, found) = sqrt(a1);
-        if (found) {
-            if (!decision) {
-                a1 = N - a1;
-            }
-            return [x, a1];
-        }
-
-        // x3
-        x = mulmod(a0, a0, N);
-        x = mulmod(x, x, N);
-        x = mulmod(x, a2, N);
-        x = mulmod(x, a2, N);
-        x = addmod(x, 1, N);
-        // must be on curve
-        a1 = mulmod(x, x, N);
-        a1 = mulmod(a1, x, N);
-        a1 = addmod(a1, 3, N);
-        (a1, found) = sqrt(a1);
-        // solhint-disable-next-line reason-string
-        require(found, "BLS: bad ft mapping implementation");
-        if (!decision) {
-            a1 = N - a1;
-        }
-        return [x, a1];
-    }
-
-    /**
-     * @inheritdoc IBLS
-     */
-    function isValidSignature(uint256[2] memory signature)
-        external
-        view
-        returns (bool)
-    {
-        if ((signature[0] >= N) || (signature[1] >= N)) {
-            return false;
-        } else {
-            return this.isOnCurveG1(signature);
-        }
-    }
-
-    /**
-     * @inheritdoc IBLS
-     */
-    function isOnCurveG1(uint256[2] memory point)
-        external
-        pure
-        returns (bool _isOnCurve)
-    {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            let t0 := mload(point)
-            let t1 := mload(add(point, 32))
-            let t2 := mulmod(t0, t0, N)
-            t2 := mulmod(t2, t0, N)
-            t2 := addmod(t2, 3, N)
-            t1 := mulmod(t1, t1, N)
-            _isOnCurve := eq(t1, t2)
-        }
-    }
-
-    /**
-     * @inheritdoc IBLS
-     */
-    function isOnCurveG2(uint256[4] memory point)
-        external
-        pure
-        returns (bool _isOnCurve)
-    {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            // x0, x1
-            let t0 := mload(point)
-            let t1 := mload(add(point, 32))
-            // x0 ^ 2
-            let t2 := mulmod(t0, t0, N)
-            // x1 ^ 2
-            let t3 := mulmod(t1, t1, N)
-            // 3 * x0 ^ 2
-            let t4 := add(add(t2, t2), t2)
-            // 3 * x1 ^ 2
-            let t5 := addmod(add(t3, t3), t3, N)
-            // x0 * (x0 ^ 2 - 3 * x1 ^ 2)
-            t2 := mulmod(add(t2, sub(N, t5)), t0, N)
-            // x1 * (3 * x0 ^ 2 - x1 ^ 2)
-            t3 := mulmod(add(t4, sub(N, t3)), t1, N)
-
-            // x ^ 3 + b
-            t0 := addmod(
-                t2,
-                0x2b149d40ceb8aaae81be18991be06ac3b5b4c5e559dbefa33267e6dc24a138e5,
-                N
-            )
-            t1 := addmod(
-                t3,
-                0x009713b03af0fed4cd2cafadeed8fdf4a74fa084e52d1852e4a2bd0685c315d2,
-                N
-            )
-
-            // y0, y1
-            t2 := mload(add(point, 64))
-            t3 := mload(add(point, 96))
-            // y ^ 2
-            t4 := mulmod(addmod(t2, t3, N), addmod(t2, sub(N, t3), N), N)
-            t3 := mulmod(shl(1, t2), t3, N)
-
-            // y ^ 2 == x ^ 3 + b
-            _isOnCurve := and(eq(t0, t4), eq(t1, t3))
-        }
-    }
-
-    /**
-     * @notice returns square root of a uint256 value
-     * @param xx the value to take the square root of
-     * @return x the uint256 value of the root
-     * @return hasRoot a bool indicating if there is a square root
-     */
-    function sqrt(uint256 xx) internal pure returns (uint256 x, bool hasRoot) {
-        x = ModexpSqrt.run(xx);
-        hasRoot = mulmod(x, x, N) == xx;
-    }
-
-    /**
-     * @notice inverts a uint256 value
-     * @param a uint256 value to invert
-     * @return uint256 of the value of the inverse
-     */
-    function inverse(uint256 a) internal pure returns (uint256) {
-        return ModexpInverse.run(a);
-    }
-
-    /**
-     * @inheritdoc IBLS
-     */
-    function hashToField(bytes32 domain, bytes memory messages)
-        external
-        view
-        returns (uint256[2] memory)
-    {
-        bytes memory _msg = this.expandMsgTo96(domain, messages);
-        uint256 u0;
-        uint256 u1;
-        uint256 a0;
-        uint256 a1;
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            let p := add(_msg, 24)
-            u1 := and(mload(p), MASK24)
-            p := add(_msg, 48)
-            u0 := and(mload(p), MASK24)
-            a0 := addmod(mulmod(u1, T24, N), u0, N)
-            p := add(_msg, 72)
-            u1 := and(mload(p), MASK24)
-            p := add(_msg, 96)
-            u0 := and(mload(p), MASK24)
-            a1 := addmod(mulmod(u1, T24, N), u0, N)
-        }
-        return [a0, a1];
+        return (out[0] != 0, true);
     }
 
     /**
@@ -408,6 +254,7 @@ contract BLS is IBLS {
     function expandMsgTo96(bytes32 domain, bytes memory message)
         external
         pure
+        override
         returns (bytes memory)
     {
         // zero<64>|msg<var>|lib_str<2>|I2OSP(0, 1)<1>|dst<var>|dst_len<1>
@@ -502,5 +349,169 @@ contract BLS is IBLS {
         }
 
         return out;
+    }
+
+    /**
+     * @inheritdoc IBLS
+     */
+    function isOnCurveG1(uint256[2] memory point)
+        external
+        pure
+        override
+        returns (bool _isOnCurve)
+    {
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            let t0 := mload(point)
+            let t1 := mload(add(point, 32))
+            let t2 := mulmod(t0, t0, N)
+            t2 := mulmod(t2, t0, N)
+            t2 := addmod(t2, 3, N)
+            t1 := mulmod(t1, t1, N)
+            _isOnCurve := eq(t1, t2)
+        }
+    }
+
+    /**
+     * @inheritdoc IBLS
+     */
+    function isOnCurveG2(uint256[4] memory point)
+        external
+        pure
+        override
+        returns (bool _isOnCurve)
+    {
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            // x0, x1
+            let t0 := mload(point)
+            let t1 := mload(add(point, 32))
+            // x0 ^ 2
+            let t2 := mulmod(t0, t0, N)
+            // x1 ^ 2
+            let t3 := mulmod(t1, t1, N)
+            // 3 * x0 ^ 2
+            let t4 := add(add(t2, t2), t2)
+            // 3 * x1 ^ 2
+            let t5 := addmod(add(t3, t3), t3, N)
+            // x0 * (x0 ^ 2 - 3 * x1 ^ 2)
+            t2 := mulmod(add(t2, sub(N, t5)), t0, N)
+            // x1 * (3 * x0 ^ 2 - x1 ^ 2)
+            t3 := mulmod(add(t4, sub(N, t3)), t1, N)
+
+            // x ^ 3 + b
+            t0 := addmod(
+                t2,
+                0x2b149d40ceb8aaae81be18991be06ac3b5b4c5e559dbefa33267e6dc24a138e5,
+                N
+            )
+            t1 := addmod(
+                t3,
+                0x009713b03af0fed4cd2cafadeed8fdf4a74fa084e52d1852e4a2bd0685c315d2,
+                N
+            )
+
+            // y0, y1
+            t2 := mload(add(point, 64))
+            t3 := mload(add(point, 96))
+            // y ^ 2
+            t4 := mulmod(addmod(t2, t3, N), addmod(t2, sub(N, t3), N), N)
+            t3 := mulmod(shl(1, t2), t3, N)
+
+            // y ^ 2 == x ^ 3 + b
+            _isOnCurve := and(eq(t0, t4), eq(t1, t3))
+        }
+    }
+
+    /**
+     * @inheritdoc IBLS
+     */
+    function mapToPoint(uint256 _x)
+        external
+        pure
+        override
+        returns (uint256[2] memory p)
+    {
+        // solhint-disable-next-line reason-string
+        require(_x < N, "BLS: invalid field element");
+        uint256 x = _x;
+
+        (, bool decision) = sqrt(x);
+
+        uint256 a0 = mulmod(x, x, N);
+        a0 = addmod(a0, 4, N);
+        uint256 a1 = mulmod(x, Z0, N);
+        uint256 a2 = mulmod(a1, a0, N);
+        a2 = inverse(a2);
+        a1 = mulmod(a1, a1, N);
+        a1 = mulmod(a1, a2, N);
+
+        // x1
+        a1 = mulmod(x, a1, N);
+        x = addmod(Z1, N - a1, N);
+        // check curve
+        a1 = mulmod(x, x, N);
+        a1 = mulmod(a1, x, N);
+        a1 = addmod(a1, 3, N);
+        bool found;
+        (a1, found) = sqrt(a1);
+        if (found) {
+            if (!decision) {
+                a1 = N - a1;
+            }
+            return [x, a1];
+        }
+
+        // x2
+        x = N - addmod(x, 1, N);
+        // check curve
+        a1 = mulmod(x, x, N);
+        a1 = mulmod(a1, x, N);
+        a1 = addmod(a1, 3, N);
+        (a1, found) = sqrt(a1);
+        if (found) {
+            if (!decision) {
+                a1 = N - a1;
+            }
+            return [x, a1];
+        }
+
+        // x3
+        x = mulmod(a0, a0, N);
+        x = mulmod(x, x, N);
+        x = mulmod(x, a2, N);
+        x = mulmod(x, a2, N);
+        x = addmod(x, 1, N);
+        // must be on curve
+        a1 = mulmod(x, x, N);
+        a1 = mulmod(a1, x, N);
+        a1 = addmod(a1, 3, N);
+        (a1, found) = sqrt(a1);
+        // solhint-disable-next-line reason-string
+        require(found, "BLS: bad ft mapping implementation");
+        if (!decision) {
+            a1 = N - a1;
+        }
+        return [x, a1];
+    }
+
+    /**
+     * @notice inverts a uint256 value
+     * @param a uint256 value to invert
+     * @return uint256 of the value of the inverse
+     */
+    function inverse(uint256 a) internal pure returns (uint256) {
+        return a.inverse();
+    }
+
+    /**
+     * @notice returns square root of a uint256 value
+     * @param xx the value to take the square root of
+     * @return x the uint256 value of the root
+     * @return hasRoot a bool indicating if there is a square root
+     */
+    function sqrt(uint256 xx) internal pure returns (uint256 x, bool hasRoot) {
+        x = xx.sqrt();
+        hasRoot = mulmod(x, x, N) == xx;
     }
 }
