@@ -24,7 +24,7 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         address _uniswapV3Factory,
         address _weth,
         uint24 _defaultPoolFee
-    ) Ownable() {
+    ) {
         require(
             _uniswapV3Factory != address(0),
             "Can't set UniswapV3Factory address as 0"

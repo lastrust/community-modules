@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../libraries/PoolAddress.sol";
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "../libraries/SafeCast.sol";
 
 /// @dev Stripped-down essentials of a UniswapV3Pool for oracle tests
 contract MockUniswapV3Pool {
