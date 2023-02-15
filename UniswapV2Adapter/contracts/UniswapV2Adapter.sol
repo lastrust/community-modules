@@ -20,6 +20,10 @@ contract UniswapV2Adapter is BaseAdapter {
         uint256 _fee,
         uint256 _swapGasEstimate
     ) BaseAdapter(_name, _swapGasEstimate) {
+        require(
+            _factory != address(0),
+            "You should set the UniswapV2Factory address"
+        );
         feeCompliment = FEE_DENOMINATOR - _fee;
         factory = _factory;
     }
