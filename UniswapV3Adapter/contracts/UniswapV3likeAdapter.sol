@@ -57,11 +57,13 @@ abstract contract UniswapV3likeAdapter is BaseAdapter {
         address _quoter,
         uint256 _quoterGasLimit
     ) BaseAdapter(_name, _swapGasEstimate) {
+        require(_quoter != address(0));
         setQuoterGasLimit(_quoterGasLimit);
         setQuoter(_quoter);
     }
 
     function setQuoter(address newQuoter) public onlyMaintainer {
+        require(newQuoter != address(0));
         quoter = newQuoter;
     }
 

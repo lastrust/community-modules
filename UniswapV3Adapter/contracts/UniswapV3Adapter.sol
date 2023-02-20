@@ -27,6 +27,7 @@ contract UniswapV3Adapter is UniswapV3likeAdapter {
         address _quoter,
         address _factory
     ) UniswapV3likeAdapter(_name, _swapGasEstimate, _quoter, _quoterGasLimit) {
+        require(_factory != address(0));
         addDefaultFeeAmounts();
         FACTORY = _factory;
     }
