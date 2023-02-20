@@ -19,7 +19,7 @@ library OracleLibrary {
         view
         returns (int24 timeWeightedAverageTick)
     {
-        require(period != 0, "BP");
+        require(period != 0, "OracleLibrary: BP");
 
         uint32[] memory secondAgos = new uint32[](2);
         secondAgos[0] = period;
@@ -54,7 +54,7 @@ library OracleLibrary {
         ) = IUniswapV3Pool(pool).slot0();
 
         // 2 observations are needed to reliably calculate the block starting tick
-        require(observationCardinality > 1, "NEO");
+        require(observationCardinality > 1, "OracleLibrary: NEO");
 
         // If the latest observation occurred in the past, then no tick-changing trades have happened in this block
         // therefore the tick in `slot0` is the same as at the beginning of the current block.
@@ -79,7 +79,7 @@ library OracleLibrary {
             bool prevInitialized
         ) = IUniswapV3Pool(pool).observations(prevIndex);
 
-        require(prevInitialized, "ONI");
+        require(prevInitialized, "OracleLibrary: ONI");
 
         return
             int24(
@@ -105,7 +105,7 @@ library OracleLibrary {
             ,
 
         ) = IUniswapV3Pool(pool).slot0();
-        require(observationCardinality > 0, "NI");
+        require(observationCardinality > 0, "OracleLibrary: NI");
 
         (uint32 observationTimestamp, , , bool initialized) = IUniswapV3Pool(
             pool

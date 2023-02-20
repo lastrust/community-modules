@@ -31,7 +31,7 @@ library TickMath {
         uint256 absTick = tick < 0
             ? uint256(-int256(tick))
             : uint256(int256(tick));
-        require(absTick <= SafeCast.toUint256(MAX_TICK), "T");
+        require(absTick <= SafeCast.toUint256(MAX_TICK));
 
         uint256 ratio = absTick & 0x1 != 0
             ? 0xfffcb933bd6fad37aa2d162d1a594001
@@ -97,8 +97,7 @@ library TickMath {
     {
         // second inequality must be < because the price can never reach the price at the max tick
         require(
-            sqrtPriceX96 >= MIN_SQRT_RATIO && sqrtPriceX96 < MAX_SQRT_RATIO,
-            "R"
+            sqrtPriceX96 >= MIN_SQRT_RATIO && sqrtPriceX96 < MAX_SQRT_RATIO
         );
         uint256 ratio = uint256(sqrtPriceX96) << 32;
 

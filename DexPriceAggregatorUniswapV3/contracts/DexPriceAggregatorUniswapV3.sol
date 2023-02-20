@@ -39,9 +39,12 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
     ) {
         require(
             _uniswapV3Factory != address(0),
-            "Can't set UniswapV3Factory address as 0"
+            "DexPriceAggregatorUniswapV3: Can't set UniswapV3Factory address as 0"
         );
-        require(_weth != address(0), "Can't set WETH address as 0");
+        require(
+            _weth != address(0),
+            "DexPriceAggregatorUniswapV3: Can't set WETH address as 0"
+        );
         uniswapV3Factory = _uniswapV3Factory;
         weth = _weth;
         defaultPoolFee = _defaultPoolFee;
@@ -58,11 +61,23 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         address _tokenOut,
         uint256 _twapPeriod
     ) external view override returns (uint256 amountOut) {
-        require(_tokenIn != address(0), "Invalid _tokenIn");
-        require(_tokenOut != address(0), "Invalid _tokenOut");
-        require(_tokenIn != _tokenOut, "Invalid _tokenIn and _tokenOut");
-        require(_amountIn > 0, "Invalid _amountIn");
-        require(_twapPeriod != 0, "BP");
+        require(
+            _tokenIn != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenIn"
+        );
+        require(
+            _tokenOut != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenOut"
+        );
+        require(
+            _tokenIn != _tokenOut,
+            "DexPriceAggregatorUniswapV3: Invalid _tokenIn and _tokenOut"
+        );
+        require(
+            _amountIn > 0,
+            "DexPriceAggregatorUniswapV3: Invalid _amountIn"
+        );
+        require(_twapPeriod != 0, "DexPriceAggregatorUniswapV3: BP");
         if (_tokenIn == weth) {
             return ethToAsset(_amountIn, _tokenOut, _twapPeriod);
         } else if (_tokenOut == weth) {
@@ -88,9 +103,15 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         uint256 _amountIn,
         uint256 _twapPeriod
     ) public view returns (uint256 ethAmountOut) {
-        require(_tokenIn != address(0), "Invalid _tokenIn");
-        require(_amountIn > 0, "Invalid _amountIn");
-        require(_twapPeriod != 0, "BP");
+        require(
+            _tokenIn != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenIn"
+        );
+        require(
+            _amountIn > 0,
+            "DexPriceAggregatorUniswapV3: Invalid _amountIn"
+        );
+        require(_twapPeriod != 0, "DexPriceAggregatorUniswapV3: BP");
         address tokenOut = weth;
         address pool = _getPoolForRoute(
             PoolAddress.getPoolKey(_tokenIn, tokenOut, defaultPoolFee)
@@ -115,9 +136,15 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         address _tokenOut,
         uint256 _twapPeriod
     ) public view returns (uint256 amountOut) {
-        require(_tokenOut != address(0), "Invalid _tokenOut");
-        require(_ethAmountIn > 0, "Invalid _ethAmountIn");
-        require(_twapPeriod != 0, "BP");
+        require(
+            _tokenOut != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenOut"
+        );
+        require(
+            _ethAmountIn > 0,
+            "DexPriceAggregatorUniswapV3: Invalid _ethAmountIn"
+        );
+        require(_twapPeriod != 0, "DexPriceAggregatorUniswapV3: BP");
         address tokenIn = weth;
         address pool = _getPoolForRoute(
             PoolAddress.getPoolKey(tokenIn, _tokenOut, defaultPoolFee)
@@ -146,9 +173,18 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         address _tokenB,
         address _pool
     ) external onlyOwner {
-        require(_tokenA != address(0), "Invalid _tokenA");
-        require(_tokenB != address(0), "Invalid _tokenB");
-        require(_tokenA != _tokenB, "Invalid _tokenA and _tokenB");
+        require(
+            _tokenA != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenA"
+        );
+        require(
+            _tokenB != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenB"
+        );
+        require(
+            _tokenA != _tokenB,
+            "DexPriceAggregatorUniswapV3: Invalid _tokenA and _tokenB"
+        );
         PoolAddress.PoolKey memory poolKey = PoolAddress.getPoolKey(
             _tokenA,
             _tokenB,
@@ -158,7 +194,7 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
             require(
                 poolKey.token0 == IUniswapV3Pool(_pool).token0() &&
                     poolKey.token1 == IUniswapV3Pool(_pool).token1(),
-                "Tokens or pool not correct"
+                "DexPriceAggregatorUniswapV3: Tokens or pool not correct"
             );
         }
         overriddenPoolForRoute[_identifyRouteFromPoolKey(poolKey)] = _pool;
@@ -174,9 +210,18 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         view
         returns (address pool)
     {
-        require(_tokenA != address(0), "Invalid _tokenA");
-        require(_tokenB != address(0), "Invalid _tokenB");
-        require(_tokenA != _tokenB, "Invalid _tokenA and _tokenB");
+        require(
+            _tokenA != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenA"
+        );
+        require(
+            _tokenB != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenB"
+        );
+        require(
+            _tokenA != _tokenB,
+            "DexPriceAggregatorUniswapV3: Invalid _tokenA and _tokenB"
+        );
         return
             _getPoolForRoute(
                 PoolAddress.getPoolKey(_tokenA, _tokenB, defaultPoolFee)
@@ -197,7 +242,7 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         view
         returns (int24 spotTick, int24 twapTick)
     {
-        require(_twapPeriod != 0, "BP");
+        require(_twapPeriod != 0, "DexPriceAggregatorUniswapV3: BP");
         spotTick = OracleLibrary.getBlockStartingTick(_pool);
         twapTick = OracleLibrary.consult(_pool, _twapPeriod);
     }
@@ -214,9 +259,18 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         address _tokenOut,
         int24 _tick
     ) external pure returns (uint256 amountOut) {
-        require(_tokenIn != address(0), "Invalid _tokenIn");
-        require(_tokenOut != address(0), "Invalid _tokenOut");
-        require(_amountIn > 0, "Invalid _amountIn");
+        require(
+            _tokenIn != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenIn"
+        );
+        require(
+            _tokenOut != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenOut"
+        );
+        require(
+            _amountIn > 0,
+            "DexPriceAggregatorUniswapV3: Invalid _amountIn"
+        );
         return
             OracleLibrary.getQuoteAtTick(_tick, _amountIn, _tokenIn, _tokenOut);
     }
@@ -237,10 +291,22 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         int24 _tick1,
         int24 _tick2
     ) external view returns (uint256 amountOut) {
-        require(_tokenIn != address(0), "Invalid _tokenIn");
-        require(_tokenOut != address(0), "Invalid _tokenOut");
-        require(_tokenIn != _tokenOut, "Invalid _tokenIn and _tokenOut");
-        require(_amountIn > 0, "Invalid _amountIn");
+        require(
+            _tokenIn != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenIn"
+        );
+        require(
+            _tokenOut != address(0),
+            "DexPriceAggregatorUniswapV3: Invalid _tokenOut"
+        );
+        require(
+            _tokenIn != _tokenOut,
+            "DexPriceAggregatorUniswapV3: Invalid _tokenIn and _tokenOut"
+        );
+        require(
+            _amountIn > 0,
+            "DexPriceAggregatorUniswapV3: Invalid _amountIn"
+        );
         return
             _getQuoteCrossingTicksThroughWeth(
                 _tokenIn,

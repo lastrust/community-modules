@@ -85,7 +85,7 @@ describe('DexPriceAggregatorUniswapV3', () => {
                 const invalidPool = await poolFactory.deploy(token0.address, tokenZ.address, 0)
                 await expect(
                     oracle.connect(owner).setPoolForRoute(token0.address, token1.address, invalidPool.address)
-                ).to.be.revertedWith('Tokens or pool not correct')
+                ).to.be.revertedWith('DexPriceAggregatorUniswapV3: Tokens or pool not correct')
             })
 
             it('cannot set pool if calling as non-owner', async () => {
@@ -810,7 +810,7 @@ describe('DexPriceAggregatorUniswapV3', () => {
 
             it('cannot query price', async () => {
                 const zeroPeriod = '0'
-                await expect(oracle.assetToAsset(token0.address, amountIn, token1.address, zeroPeriod)).to.be.revertedWith('BP')
+                await expect(oracle.assetToAsset(token0.address, amountIn, token1.address, zeroPeriod)).to.be.revertedWith('DexPriceAggregatorUniswapV3: BP')
             })
         })
 

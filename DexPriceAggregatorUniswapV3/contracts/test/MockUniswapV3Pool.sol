@@ -79,7 +79,7 @@ contract MockUniswapV3Pool {
     {
         require(
             _index < _slot0.observationCardinality,
-            "MockUniswapV3Pool#observations called with invalid index (must be < observationCardinality)"
+            "MockUniswapV3Pool: observations called with invalid index (must be < observationCardinality)"
         );
         Observation memory observation = _observations[_index];
 
@@ -103,7 +103,7 @@ contract MockUniswapV3Pool {
     {
         require(
             _secondsAgos.length == 2,
-            "MockUniswapV3Pool#observe called with invalid array length (must be 2)"
+            "MockUniswapV3Pool: observe called with invalid array length (must be 2)"
         );
         int56[] memory _tickCumulatives = new int56[](2);
         _tickCumulatives[0] = _calculateTickCumulative(_secondsAgos[0]);
@@ -125,11 +125,11 @@ contract MockUniswapV3Pool {
     ) external {
         require(
             _blockTimestamps.length == _tickCumulatives.length,
-            "MockUniswapV3Pool#setObservations called with invalid array lengths (must be matching)"
+            "MockUniswapV3Pool: setObservations called with invalid array lengths (must be matching)"
         );
         require(
             _blockTimestamps.length <= _slot0.observationCardinality,
-            "MockUniswapV3Pool#setObservations called with invalid array lengths (must be < slot0.observationCardinality)"
+            "MockUniswapV3Pool: setObservations called with invalid array lengths (must be < slot0.observationCardinality)"
         );
 
         for (uint256 ii; ii < _blockTimestamps.length; ++ii) {
