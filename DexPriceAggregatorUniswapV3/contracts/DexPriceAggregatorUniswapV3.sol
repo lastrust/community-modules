@@ -14,12 +14,24 @@ import "./interfaces/IDexPriceAggregator.sol";
 ///         Provides the minimum output between an asset's "spot" price and TWAP from the last n seconds.
 ///         The "spot" price is always the last block's ending price.
 contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
+    /// @notice Address for uniswap v3 factory
     address public immutable uniswapV3Factory;
+
+    /// @notice Address for wrapped native token
     address public immutable weth;
+
+    /// @notice Default pool fee
     uint24 public immutable defaultPoolFee;
 
+    /// @notice Mapping of the overridden pools for the route
     mapping(bytes32 => address) public overriddenPoolForRoute;
 
+    /**
+     * @dev Initializes the contract by setting a `uniswapV3Factory`, `weth` and a `defaultPoolFee`.
+     * @param _uniswapV3Factory (address) Address for uniswap v3 factory
+     * @param _weth (address) Address for wrapped native token
+     * @param _defaultPoolFee (uint24) Default pool fee value
+     */
     constructor(
         address _uniswapV3Factory,
         address _weth,
@@ -46,6 +58,11 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         address _tokenOut,
         uint256 _twapPeriod
     ) external view override returns (uint256 amountOut) {
+        require(_tokenIn != address(0), "Invalid _tokenIn");
+        require(_tokenOut != address(0), "Invalid _tokenOut");
+        require(_tokenIn != _tokenOut, "Invalid _tokenIn and _tokenOut");
+        require(_amountIn > 0, "Invalid _amountIn");
+        require(_twapPeriod != 0, "BP");
         if (_tokenIn == weth) {
             return ethToAsset(_amountIn, _tokenOut, _twapPeriod);
         } else if (_tokenOut == weth) {
@@ -71,6 +88,9 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         uint256 _amountIn,
         uint256 _twapPeriod
     ) public view returns (uint256 ethAmountOut) {
+        require(_tokenIn != address(0), "Invalid _tokenIn");
+        require(_amountIn > 0, "Invalid _amountIn");
+        require(_twapPeriod != 0, "BP");
         address tokenOut = weth;
         address pool = _getPoolForRoute(
             PoolAddress.getPoolKey(_tokenIn, tokenOut, defaultPoolFee)
@@ -95,6 +115,9 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         address _tokenOut,
         uint256 _twapPeriod
     ) public view returns (uint256 amountOut) {
+        require(_tokenOut != address(0), "Invalid _tokenOut");
+        require(_ethAmountIn > 0, "Invalid _ethAmountIn");
+        require(_twapPeriod != 0, "BP");
         address tokenIn = weth;
         address pool = _getPoolForRoute(
             PoolAddress.getPoolKey(tokenIn, _tokenOut, defaultPoolFee)
@@ -122,7 +145,10 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         address _tokenA,
         address _tokenB,
         address _pool
-    ) public onlyOwner {
+    ) external onlyOwner {
+        require(_tokenA != address(0), "Invalid _tokenA");
+        require(_tokenB != address(0), "Invalid _tokenB");
+        require(_tokenA != _tokenB, "Invalid _tokenA and _tokenB");
         PoolAddress.PoolKey memory poolKey = PoolAddress.getPoolKey(
             _tokenA,
             _tokenB,
@@ -144,10 +170,13 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
     /// @param _tokenB Address of another ERC20 token contract
     /// @return pool Address of a Uniswap V3 pool constructed with _tokenA and _tokenB
     function getPoolForRoute(address _tokenA, address _tokenB)
-        public
+        external
         view
         returns (address pool)
     {
+        require(_tokenA != address(0), "Invalid _tokenA");
+        require(_tokenB != address(0), "Invalid _tokenB");
+        require(_tokenA != _tokenB, "Invalid _tokenA and _tokenB");
         return
             _getPoolForRoute(
                 PoolAddress.getPoolKey(_tokenA, _tokenB, defaultPoolFee)
@@ -168,6 +197,7 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         view
         returns (int24 spotTick, int24 twapTick)
     {
+        require(_twapPeriod != 0, "BP");
         spotTick = OracleLibrary.getBlockStartingTick(_pool);
         twapTick = OracleLibrary.consult(_pool, _twapPeriod);
     }
@@ -183,7 +213,10 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         uint128 _amountIn,
         address _tokenOut,
         int24 _tick
-    ) public pure returns (uint256 amountOut) {
+    ) external pure returns (uint256 amountOut) {
+        require(_tokenIn != address(0), "Invalid _tokenIn");
+        require(_tokenOut != address(0), "Invalid _tokenOut");
+        require(_amountIn > 0, "Invalid _amountIn");
         return
             OracleLibrary.getQuoteAtTick(_tick, _amountIn, _tokenIn, _tokenOut);
     }
@@ -203,7 +236,11 @@ contract DexPriceAggregatorUniswapV3 is IDexPriceAggregator, Ownable {
         address _tokenOut,
         int24 _tick1,
         int24 _tick2
-    ) public view returns (uint256 amountOut) {
+    ) external view returns (uint256 amountOut) {
+        require(_tokenIn != address(0), "Invalid _tokenIn");
+        require(_tokenOut != address(0), "Invalid _tokenOut");
+        require(_tokenIn != _tokenOut, "Invalid _tokenIn and _tokenOut");
+        require(_amountIn > 0, "Invalid _amountIn");
         return
             _getQuoteCrossingTicksThroughWeth(
                 _tokenIn,
