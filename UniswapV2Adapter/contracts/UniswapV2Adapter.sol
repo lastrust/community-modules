@@ -24,6 +24,7 @@ contract UniswapV2Adapter is BaseAdapter {
             _factory != address(0),
             "You should set the UniswapV2Factory address"
         );
+        require(_fee <= FEE_DENOMINATOR, "Invalid fee value");
         feeCompliment = FEE_DENOMINATOR - _fee;
         factory = _factory;
     }
