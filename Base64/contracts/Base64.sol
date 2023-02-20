@@ -31,8 +31,8 @@ library Base64 {
         // The final Base64 length should be `bytes` data length multiplied by 4/3 rounded up
         // - `data.length + 2`  -> Round up
         // - `/ 3`              -> Number of 3-bytes chunks
-        // - `4 *`              -> 4 characters for each chunk
-        string memory result = new string(4 * ((data.length + 2) / 3));
+        // - `<< 2`              -> 4 characters for each chunk
+        string memory result = new string(((data.length + 2) / 3) << 2);
 
         /// @solidity memory-safe-assembly
         assembly {
