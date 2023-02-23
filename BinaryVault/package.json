@@ -1,0 +1,25 @@
+{
+  "name": "bunzz-binaryvault",
+  "version": "1.0.0",
+  "description": "Bunzz BinaryVault Module",
+  "author": "Light-Fury",
+  "license": "MIT",
+  "scripts": {
+    "clean": "npx hardhat clean",
+    "compile": "npx hardhat compile",
+    "build": "npm run clean && npm run compile",
+    "test": "npx hardhat test"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "@openzeppelin/contracts": "^4.3.2",
+    "hardhat": "^2.12.4",
+    "hardhat-gas-reporter": "^1.0.9"
+  },
+  "dependencies": {
+    "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@openzeppelin/test-helpers": "^0.5.16",
+    "dotenv": "^16.0.3",
+    "web3": "^1.8.1"
+  }
+}
