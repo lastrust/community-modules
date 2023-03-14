@@ -16,9 +16,9 @@ abstract contract BaseAdapter is IAdapter, Maintainable {
 
     uint256 internal constant UINT_MAX = type(uint256).max;
     /// @notice Swap Gas Estimate of the Adapter
-    uint256 public swapGasEstimate;
+    uint256 public override swapGasEstimate;
     /// @notice Name of the Adapter
-    string public name;
+    string public override name;
 
     /**
      * @notice Emitted when swap is finished
@@ -106,7 +106,7 @@ abstract contract BaseAdapter is IAdapter, Maintainable {
         address _fromToken,
         address _toToken,
         address _to
-    ) external {
+    ) external override {
         require(
             _fromToken != address(0),
             "BaseAdapter: Invalid fromToken address"
@@ -128,7 +128,7 @@ abstract contract BaseAdapter is IAdapter, Maintainable {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut
-    ) external view returns (uint256) {
+    ) external view override returns (uint256) {
         return _query(_amountIn, _tokenIn, _tokenOut);
     }
 

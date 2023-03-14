@@ -15,7 +15,6 @@ import "./base/BaseAdapter.sol";
 contract UniswapV2Adapter is BaseAdapter {
     using SafeERC20 for IERC20;
 
-    /// @notice Fee dominator (1000)
     uint256 internal constant FEE_DENOMINATOR = 1e3;
     /// @notice Fee complement
     uint256 public immutable feeCompliment;
