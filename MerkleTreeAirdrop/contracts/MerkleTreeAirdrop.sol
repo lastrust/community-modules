@@ -15,8 +15,7 @@ contract MerkleTreeAirdrop is IBunzz, Ownable, MerkleDistributor {
 
   address public token;
 
-  constructor(address token_, bytes32 merkleRoot_) {
-    token = token_;
+  constructor(bytes32 merkleRoot_) {
     __MerkleDistributor_init(merkleRoot_);
   }
 
@@ -24,6 +23,7 @@ contract MerkleTreeAirdrop is IBunzz, Ownable, MerkleDistributor {
     address[] calldata contracts
   ) external override onlyOwner {
     require(contracts.length > 0, "No contract to connect");
+    require(token != address(0x0), "Token address was already set");
     token = contracts[0];
   }
 
