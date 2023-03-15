@@ -107,23 +107,6 @@ contract StakingRewards is IStakingRewards, Ownable, Pausable, ReentrancyGuard {
     rewardsDuration = duration;
   }
 
-  function connectToOtherContracts(
-    address[] memory otherContracts
-  ) external override onlyOwner {}
-
-  /**
-   * @notice Pause or unpause contract
-   * @dev Callable by owner
-   * @param newPaused Flag to new paused state
-   */
-  function setPaused(bool newPaused) external onlyOwner {
-    if (newPaused) {
-      _pause();
-    } else {
-      _unpause();
-    }
-  }
-
   /**
    * @notice Set rewards duration, only available to set after finish
    * of previous rewards period.
@@ -151,7 +134,7 @@ contract StakingRewards is IStakingRewards, Ownable, Pausable, ReentrancyGuard {
     if (amount <= 0) {
       revert ZeroAmount();
     }
-    totalSupply += amount;
+    totalSupply = totalSupply + amount;
     balances[msg.sender] += amount;
     stakingToken.safeTransferFrom(msg.sender, address(this), amount);
     emit Staked(msg.sender, amount);
@@ -173,7 +156,7 @@ contract StakingRewards is IStakingRewards, Ownable, Pausable, ReentrancyGuard {
     if (balances[msg.sender] < amount) {
       revert NotEnoughBalance();
     }
-    totalSupply -= amount;
+    totalSupply = totalSupply - amount;
     balances[msg.sender] -= amount;
     stakingToken.safeTransfer(msg.sender, amount);
     emit Unstaked(msg.sender, amount);
