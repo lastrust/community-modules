@@ -53,6 +53,51 @@ interface IBinaryVault {
     */
     function removeLiquidity(address user, uint256 shareAmount) external;
 
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes calldata data
+    ) external;
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) external;
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) external;
+
+    function approve(address to, uint256 tokenId) external;
+
+    function setApprovalForAll(address operator, bool _approved) external;
+
+    function getApproved(uint256 tokenId) external view returns (address operator);
+
+    function isApprovedForAll(address owner, address operator) external view returns (bool);
+
+    function name() external view returns (string memory);
+
+    function symbol() external view returns (string memory);
+
+    function tokenURI(uint256 tokenId) external view returns (string memory);
+
+    function explicitOwnershipOf(uint256 tokenId) external view returns (TokenOwnership memory);
+
+    function explicitOwnershipsOf(uint256[] calldata tokenIds) external view returns (TokenOwnership[] memory);
+
+    function tokensOfOwnerIn(
+        address owner,
+        uint256 start,
+        uint256 stop
+    ) external view returns (uint256[] memory);
+
+    function tokensOfOwner(address owner) external view returns (uint256[] memory);
+
     /**
     * @dev Get shares of user.
     */
@@ -60,40 +105,11 @@ interface IBinaryVault {
 
     function getUnderlyingToken() external view returns (IERC20);
 
-        function totalSupply() external view returns (uint256);
-            function supportsInterface(bytes4 interfaceId) external view returns (bool);
-    function balanceOf(address owner) external view returns (uint256 balance);
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes calldata data
-    ) external;
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) external;
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) external;
-    function approve(address to, uint256 tokenId) external;
-    function setApprovalForAll(address operator, bool _approved) external;
-    function getApproved(uint256 tokenId) external view returns (address operator);
-    function isApprovedForAll(address owner, address operator) external view returns (bool);
-    function name() external view returns (string memory);
-    function symbol() external view returns (string memory);
-    function tokenURI(uint256 tokenId) external view returns (string memory);
-    function explicitOwnershipOf(uint256 tokenId) external view returns (TokenOwnership memory);
-    function explicitOwnershipsOf(uint256[] memory tokenIds) external view returns (TokenOwnership[] memory);
-    function tokensOfOwnerIn(
-        address owner,
-        uint256 start,
-        uint256 stop
-    ) external view returns (uint256[] memory);
-    function tokensOfOwner(address owner) external view returns (uint256[] memory);
+    function totalSupply() external view returns (uint256);
 
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+
+    function balanceOf(address owner) external view returns (uint256 balance);
+
+    function ownerOf(uint256 tokenId) external view returns (address owner);
 }
