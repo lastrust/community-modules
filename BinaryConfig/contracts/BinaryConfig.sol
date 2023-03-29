@@ -6,6 +6,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IBinaryConfig.sol";
 
+// Common Errors
+error ZERO_ADDRESS();
+
 contract BinaryConfig is Ownable, IBinaryConfig {
     uint256 public constant FEE_BASE = 10_000;
     /// @dev Trading fee should be paid when winners claim their rewards, see claim function of Market
@@ -15,30 +18,40 @@ contract BinaryConfig is Ownable, IBinaryConfig {
     /// @dev treasury wallet
     address public treasury;
 
+    event TradingFeeChanged(uint256 indexed fee);
+    event ClaimNoticeChanged(uint256 indexed period);
+    event TreasuryChanged(address indexed newTreasury);
+
     constructor(
         uint16 tradingFee_,
         uint256 claimNoticePeriod_,
         address treasury_
-    ) Ownable() {
-        require(tradingFee_ < FEE_BASE, "Too high");
-        require(treasury_ != address(0), "Invalid address");
+    ) {
+        require(tradingFee_ < FEE_BASE, "BinaryConfig: Too high");
+        require(treasury_ != address(0), "BinaryConfig: Invalid address");
         tradingFee = tradingFee_; // 10% as default
         claimNoticePeriod = claimNoticePeriod_;
         treasury = treasury_;
     }
     
     function setTradingFee(uint256 newTradingFee) external override onlyOwner {
-        require(newTradingFee < FEE_BASE, "Too high");
+        require(newTradingFee < FEE_BASE, "BinaryConfig: Too high");
         tradingFee = newTradingFee;
+
+        emit TradingFeeChanged(newTradingFee);
     }
 
     function setClaimNoticePeriod(uint256 newNoticePeriod) external override onlyOwner {
         claimNoticePeriod = newNoticePeriod;
+
+        emit ClaimNoticeChanged(newNoticePeriod);
     }
 
     function setTreasury(address newTreasury) external override onlyOwner {
-        if (newTreasury == address(0)) revert("ZERO_ADDRESS()");
+        if (newTreasury == address(0)) revert ZERO_ADDRESS();
         treasury = newTreasury;
+
+        emit TreasuryChanged(newTreasury);
     }
 
     function getFeeBase() external pure returns (uint256) {
