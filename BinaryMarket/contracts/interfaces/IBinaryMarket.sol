@@ -25,11 +25,11 @@ interface IBinaryMarket {
 
     function claim(uint8 timeframeId, uint256 epoch) external;
 
-    function claimBatch(uint8[] memory timeframeIds, uint256[][] memory epochs)
+    function claimBatch(uint8[] calldata timeframeIds, uint256[][] calldata epochs)
         external;
 
     function executeRound(
-        uint8[] memory timeframeIds,
+        uint8[] calldata timeframeIds,
         uint256 price
     ) external;
 

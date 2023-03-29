@@ -3,8 +3,8 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "./interfaces/IBinaryMarket.sol";
 import "./interfaces/IBinaryVault.sol";
@@ -14,12 +14,12 @@ import "./interfaces/IOracle.sol";
 // fixme decide if use error constants or error string, not both. Better to use "ERROR_LIKE_THIS" then "like this"
 contract BinaryMarket is
     Pausable,
+    ReentrancyGuard,
     IBinaryMarket
 {
     using SafeERC20 for IERC20;
 
-    // fixme do we real need all fields to be uint256?
-    // legendary, TBH, not sure.. but I think most of them should be.
+    /// @dev Price data for each period
     struct Round {
         uint256 epoch;
         uint256 startBlock;
@@ -35,15 +35,20 @@ contract BinaryMarket is
         bool oracleCalled;
     }
 
+    /// @dev Data for bet from Players
     struct BetInfo {
         Position position;
         uint256 amount;
         bool claimed; // default false
     }
 
-    /// @dev Market Data
+    /// @dev Market Name
     string public marketName;
+
+    /// @dev Price Oracle
     IOracle public oracle;
+
+    /// @dev Vault for this Market
     IBinaryVault public vault;
 
     IERC20 public underlyingToken;
@@ -58,7 +63,7 @@ contract BinaryMarket is
     mapping(uint8 => mapping(uint256 => mapping(address => BetInfo)))
         public ledger; // timeframe id => round id => address => bet info
 
-    // @dev user rounds per timeframe
+    /// @dev user rounds per timeframe
     mapping(uint8 => mapping(address => uint256[])) public userRounds; // timeframe id => user address => round ids
 
     /// @dev current round id per timeframe.
@@ -70,10 +75,7 @@ contract BinaryMarket is
     uint256 public genesisStartBlockTimestamp;
     uint256 public genesisStartBlockNumber;
 
-    // fixme why admin is not from ownable, why operator is not from accesscontrol?
-    // legendary - We aimed to create all markets from market mananger. 
-    // In this case owner will be market manager, so we cannot control market directly. 
-    // I don't think we need to do all admin operations through market manager. What do you think?
+    /// @dev owner will be binary market. So needs admin & operator roles
     address public adminAddress;
     address public operatorAddress;
 
@@ -98,6 +100,8 @@ contract BinaryMarket is
         uint256 indexed roundId,
         uint256 amount
     );
+
+    event MinBetAmountChanged(uint256 indexed amount);
 
     event StartRound(uint8 indexed timeframeId, uint256 indexed epoch);
     event LockRound(
@@ -131,19 +135,19 @@ contract BinaryMarket is
     );
 
     modifier onlyAdmin() {
-        require(msg.sender == adminAddress, "admin: wut?");
+        require(msg.sender == adminAddress, "BinaryMarket: invalid admin");
         _;
     }
 
     modifier onlyOperator() {
-        require(msg.sender == operatorAddress, "operator: wut?");
+        require(msg.sender == operatorAddress, "BinaryMarket: invalid operator");
         _;
     }
 
     modifier onlyAdminOrOperator() {
         require(
             msg.sender == adminAddress || msg.sender == operatorAddress,
-            "admin | operator: wut?"
+            "BinaryMarket: invalid admin or operator"
         );
         _;
     }
@@ -157,9 +161,11 @@ contract BinaryMarket is
         address operatorAddress_,
         uint256 minBetAmount_
     ) {
-        if (oracle_ == address(0)) revert("ZERO_ADDRESS()");
-        if (vault_ == address(0)) revert("ZERO_ADDRESS()");
-        if (timeframes_.length == 0) revert("INVALID_TIMEFRAMES()");
+        require(oracle_ != address(0), "ZERO_ADDRESS()");
+        require(vault_ != address(0), "ZERO_ADDRESS()");
+        require(adminAddress_ != address(0), "ZERO_ADDRESS()");
+        require(operatorAddress_ != address(0), "ZERO_ADDRESS()");
+        require(timeframes_.length != 0, "INVALID_TIMEFRAMES()");
 
         oracle = IOracle(oracle_);
         vault = IBinaryVault(vault_);
@@ -176,9 +182,6 @@ contract BinaryMarket is
         underlyingToken = vault.getUnderlyingToken();
     }
 
-    function getUnderlyingToken() external view returns (IERC20) {
-        return underlyingToken;
-    }
     /**
      * @notice Set oracle of underlying token of this market
      * @dev Only owner can set the oracle
@@ -195,7 +198,7 @@ contract BinaryMarket is
      * @dev Only owner can set name
      * @param name_ New name to set
      */
-    function setName(string memory name_) external onlyAdmin {
+    function setName(string calldata name_) external onlyAdmin {
         emit MarketNameChanged(marketName, name_);
         marketName = name_;
     }
@@ -227,7 +230,7 @@ contract BinaryMarket is
      * @dev Only admin can set new timeframe, format genesis
      * @param timeframes_ New timeframe to set
      */
-    function setTimeframes(TimeFrame[] memory timeframes_) external onlyAdmin {
+    function setTimeframes(TimeFrame[] calldata timeframes_) external onlyAdmin {
         require(timeframes_.length > 0, "Invalid length");
         genesisStartOnce = false;
         delete timeframes;
@@ -238,21 +241,62 @@ contract BinaryMarket is
     }
 
     /**
-     * @dev Get latest recorded price from oracle
+     * @dev Bet bear position
+     * @param amount Bet amount
+     * @param timeframeId id of 1m/5m/10m
+     * @param position bull/bear
      */
-    function _getPriceFromOracle() internal returns (uint256, uint256, uint256) {
-        IOracle.Round memory latestRound = oracle.getLatestRoundData();
+    function openPosition(
+        uint256 amount,
+        uint8 timeframeId,
+        Position position
+    ) external override whenNotPaused nonReentrant {
+        uint256 currentEpoch = currentEpochs[timeframeId];
+        underlyingToken.safeTransferFrom(msg.sender, address(vault), amount);
+
+        require(_bettable(timeframeId, currentEpoch), "Round not bettable");
         require(
-            latestRound.roundId > oracleLatestRoundId,
-            "Oracle update roundId must be larger than oracleLatestRoundId"
+            amount >= minBetAmount,
+            "Bet amount must be greater than minBetAmount"
         );
-        oracleLatestRoundId = latestRound.roundId;
-        return (latestRound.roundId, latestRound.price, latestRound.timestamp);
+        require(
+            ledger[timeframeId][currentEpoch][msg.sender].amount == 0,
+            "Can only bet once per round"
+        );
+
+        // Update round data
+        Round storage round = rounds[timeframeId][currentEpoch];
+        round.totalAmount = round.totalAmount + amount;
+        
+        if (position == Position.Bear) {
+            round.bearAmount = round.bearAmount + amount;
+        } else {
+            round.bullAmount = round.bullAmount + amount;
+        }
+
+        // Update user data
+        BetInfo storage betInfo = ledger[timeframeId][currentEpoch][msg.sender];
+        betInfo.position = position;
+        betInfo.amount = amount;
+        userRounds[timeframeId][msg.sender].push(currentEpoch);
+
+        emit PositionOpened(
+            marketName,
+            msg.sender,
+            amount,
+            timeframeId,
+            currentEpoch,
+            position
+        );
     }
 
-    function _writeOraclePrice(uint256 timestamp, uint256 price) internal {
-        IOracle.Round memory latestRound = oracle.getLatestRoundData();
-        oracle.writePrice(latestRound.roundId + 1, timestamp, price);
+    /**
+     * @notice claim winning rewards
+     * @param timeframeId Timeframe ID to claim winning rewards
+     * @param epoch round id
+     */
+    function claim(uint8 timeframeId, uint256 epoch) external override {
+        _claim(timeframeId, epoch);
     }
 
     /**
@@ -286,14 +330,11 @@ contract BinaryMarket is
         genesisLockOnces[timeframeId] = true;
     }
 
-
-    // fixme what if I have 2m and 3m timeframes? I would like to not depend on having 1m tf.
-    // legendary - Our bet round doesn't depend on timeframe specifician, I think we can use any timeframe 2m or 3m. Just need to determine how to call this function from backend.
     /**
      * @dev Start the next round n, lock price for round n-1, end round n-2
      */
     function executeRound(
-        uint8[] memory timeframeIds,
+        uint8[] calldata timeframeIds,
         uint256 price
     ) external override onlyOperator whenNotPaused {
         require(
@@ -332,6 +373,187 @@ contract BinaryMarket is
             }
 
         }
+    }
+
+    /**
+     * @notice Batch claim winning rewards
+     * @param timeframeIds Timeframe IDs to claim winning rewards
+     * @param epochs round ids
+     */
+    function claimBatch(uint8[] calldata timeframeIds, uint256[][] calldata epochs) external override {
+        require(timeframeIds.length == epochs.length, "Invalid array length");
+
+        for (uint256 i = 0; i < timeframeIds.length; i = i + 1) {
+            uint8 timeframeId = timeframeIds[i];
+            for (uint256 j = 0; j < epochs[i].length; j = j + 1) {
+                _claim(timeframeId, epochs[i][j]);
+            }
+        }
+    }
+
+    function getUnderlyingToken() external view returns (IERC20) {
+        return underlyingToken;
+    }
+
+
+    /**
+     * @dev Get the refundable stats of specific epoch and user account
+     */
+    function refundable(
+        uint8 timeframeId,
+        uint256 epoch,
+        address user
+    ) public view returns (bool) {
+        BetInfo memory betInfo = ledger[timeframeId][epoch][user];
+        Round memory round = rounds[timeframeId][epoch];
+        return
+            !round.oracleCalled &&
+            block.number > round.closeBlock + timeframes[timeframeId].bufferBlocks &&
+            betInfo.amount != 0;
+    }
+
+    /**
+    * @dev Pause/unpause
+    */
+
+    function setPause(bool value) external onlyOperator {
+        if (value) {
+            _pause();
+        } else {
+            genesisStartOnce = false;
+            for (uint i; i < timeframes.length; i = i + 1) {
+                genesisLockOnces[timeframes[i].id] = false;
+            }
+            _unpause();
+        }
+    }
+
+    
+    /**
+     * @dev set minBetAmount
+     * callable by admin
+     */
+    function setMinBetAmount(uint256 _minBetAmount) external onlyAdmin {
+        minBetAmount = _minBetAmount;
+
+        emit MinBetAmountChanged(_minBetAmount);
+    }
+
+    /// @dev check if bet is active
+
+    function getExecutableTimeframes() external view override returns(uint8[] memory result, uint256 count) {
+        result = new uint8[](timeframes.length);
+
+        for (uint256 i = 0; i < timeframes.length; i = i + 1) {
+            uint8 timeframeId = timeframes[i].id;
+
+            if (isNecessaryToExecute(timeframeId)) {
+                result[i] = timeframeId;
+                count = count + 1;
+            }
+        }
+    }
+
+    /**
+     * @dev Return round epochs that a user has participated in specific timeframe
+     */
+    function getUserRounds(
+        uint8 timeframeId,
+        address user,
+        uint256 cursor,
+        uint256 size
+    ) external view returns (uint256[] memory, uint256) {
+        uint256 length = size;
+        if (length > userRounds[timeframeId][user].length - cursor) {
+            length = userRounds[timeframeId][user].length - cursor;
+        }
+
+        uint256[] memory values = new uint256[](length);
+        for (uint256 i = 0; i < length; i++) {
+            values[i] = userRounds[timeframeId][user][cursor + i];
+        }
+
+        return (values, cursor + length);
+    }
+
+    /**
+     * @dev Caluclate current round based on genesis timestamp and block number
+     * @param timeframeId timeframe id what we want to get round number
+    */
+    function getCurrentUserRoundNumber(uint8 timeframeId) 
+        external 
+        view 
+        returns(uint256 roundFromBlockNumber, uint256 roundFromBlockTime )
+    {
+        roundFromBlockNumber = (block.number - genesisStartBlockNumber) / timeframes[timeframeId].intervalBlocks;
+        roundFromBlockTime = (block.timestamp - genesisStartBlockTimestamp) / timeframes[timeframeId].interval;
+    }
+
+    /**
+    * @dev Check if round is bettable
+    */
+    function isBettable(uint8 timeframeId, uint256 epoch)
+        external
+        view
+        returns(bool)
+    {
+        return _bettable(timeframeId, epoch);
+    }
+
+    /**
+     * @dev Get the claimable stats of specific epoch and user account
+     */
+    function isClaimable(
+        uint8 timeframeId,
+        uint256 epoch,
+        address user
+    ) public view returns (bool) {
+        BetInfo memory betInfo = ledger[timeframeId][epoch][user];
+        Round memory round = rounds[timeframeId][epoch];
+        if (round.lockPrice == round.closePrice) {
+            return false;
+        }
+        return
+            round.oracleCalled &&
+            betInfo.amount > 0 &&
+            !betInfo.claimed && 
+            ((round.closePrice > round.lockPrice &&
+                betInfo.position == Position.Bull) ||
+                (round.closePrice < round.lockPrice &&
+                    betInfo.position == Position.Bear));
+    }
+
+    function isNecessaryToExecute(uint8 timeframeId) public view returns(bool) {
+        if (!genesisLockOnces[timeframeId] || !genesisStartOnce) {
+            return false;
+        }
+
+        uint256 currentEpoch = currentEpochs[timeframeId];
+        Round memory round = rounds[timeframeId][currentEpoch];
+        Round memory prevRound = rounds[timeframeId][currentEpoch - 1];
+
+        bool lockable = round.startBlock != 0 && round.lockPrice == 0 && block.number >= round.lockBlock;
+        bool closable = prevRound.lockBlock !=0 && prevRound.closePrice == 0 && !prevRound.oracleCalled && block.number >= prevRound.closeBlock;
+
+        return lockable && closable && (prevRound.totalAmount > 0 || round.totalAmount > 0);
+    }
+
+    /**
+     * @dev Get latest recorded price from oracle
+     */
+    function _getPriceFromOracle() internal returns (uint256, uint256, uint256) {
+        IOracle.Round memory latestRound = oracle.getLatestRoundData();
+        require(
+            latestRound.roundId > oracleLatestRoundId,
+            "Oracle update roundId must be larger than oracleLatestRoundId"
+        );
+        oracleLatestRoundId = latestRound.roundId;
+        return (latestRound.roundId, latestRound.price, latestRound.timestamp);
+    }
+
+    function _writeOraclePrice(uint256 timestamp, uint256 price) internal {
+        IOracle.Round memory latestRound = oracle.getLatestRoundData();
+        oracle.writePrice(latestRound.roundId + 1, timestamp, price);
     }
 
     /**
@@ -424,56 +646,6 @@ contract BinaryMarket is
         emit EndRound(timeframeId, epoch, roundId, round.closePrice);
     }
 
-    /**
-     * @dev Bet bear position
-     * @param amount Bet amount
-     * @param timeframeId id of 1m/5m/10m
-     * @param position bull/bear
-     */
-    function openPosition(
-        uint256 amount,
-        uint8 timeframeId,
-        Position position
-    ) external override whenNotPaused {
-        uint256 currentEpoch = currentEpochs[timeframeId];
-        underlyingToken.safeTransferFrom(msg.sender, address(vault), amount);
-
-        require(_bettable(timeframeId, currentEpoch), "Round not bettable");
-        require(
-            amount >= minBetAmount,
-            "Bet amount must be greater than minBetAmount"
-        );
-        require(
-            ledger[timeframeId][currentEpoch][msg.sender].amount == 0,
-            "Can only bet once per round"
-        );
-
-        // Update round data
-        Round storage round = rounds[timeframeId][currentEpoch];
-        round.totalAmount = round.totalAmount + amount;
-        
-        if (position == Position.Bear) {
-            round.bearAmount = round.bearAmount + amount;
-        } else {
-            round.bullAmount = round.bullAmount + amount;
-        }
-
-        // Update user data
-        BetInfo storage betInfo = ledger[timeframeId][currentEpoch][msg.sender];
-        betInfo.position = position;
-        betInfo.amount = amount;
-        userRounds[timeframeId][msg.sender].push(currentEpoch);
-
-        emit PositionOpened(
-            marketName,
-            msg.sender,
-            amount,
-            timeframeId,
-            currentEpoch,
-            position
-        );
-    }
-
     function _claim(uint8 timeframeId, uint256 epoch) internal {
         require(
             rounds[timeframeId][epoch].startBlock != 0,
@@ -516,54 +688,6 @@ contract BinaryMarket is
     }
 
     /**
-     * @notice claim winning rewards
-     * @param timeframeId Timeframe ID to claim winning rewards
-     * @param epoch round id
-     */
-    function claim(uint8 timeframeId, uint256 epoch) external override {
-        _claim(timeframeId, epoch);
-    }
-
-    /**
-     * @notice Batch claim winning rewards
-     * @param timeframeIds Timeframe IDs to claim winning rewards
-     * @param epochs round ids
-     */
-    function claimBatch(uint8[] memory timeframeIds, uint256[][] memory epochs) external override {
-        require(timeframeIds.length == epochs.length, "Invalid array length");
-
-        for (uint256 i = 0; i < timeframeIds.length; i = i + 1) {
-            uint8 timeframeId = timeframeIds[i];
-            for (uint256 j = 0; j < epochs[i].length; j = j + 1) {
-                _claim(timeframeId, epochs[i][j]);
-            }
-        }
-    }
-
-    /**
-     * @dev Get the claimable stats of specific epoch and user account
-     */
-    function isClaimable(
-        uint8 timeframeId,
-        uint256 epoch,
-        address user
-    ) public view returns (bool) {
-        BetInfo memory betInfo = ledger[timeframeId][epoch][user];
-        Round memory round = rounds[timeframeId][epoch];
-        if (round.lockPrice == round.closePrice) {
-            return false;
-        }
-        return
-            round.oracleCalled &&
-            betInfo.amount > 0 &&
-            !betInfo.claimed && 
-            ((round.closePrice > round.lockPrice &&
-                betInfo.position == Position.Bull) ||
-                (round.closePrice < round.lockPrice &&
-                    betInfo.position == Position.Bear));
-    }
-
-    /**
      * @dev Determine if a round is valid for receiving bets
      * Round must have started and locked
      * Current block must be within startBlock and closeBlock
@@ -573,10 +697,6 @@ contract BinaryMarket is
         view
         returns (bool)
     {
-        // fixme I cannot bet if it's locked
-        // fixme here I want a safeguard that I cannot bet on such round which should have close price at time which already gone on block.timestamp 
-        // legendary - lockblock !=0 means this round should already be started. (Not live yet, just ready to accept bets), and lockPrice == 0 means this block should not be locked yet (still acceptable bet)
-        // So once round starts, it can accept bets till it will be locked. (till executeRound called from backend)
         return
             rounds[timeframeId][epoch].startBlock != 0 &&
             rounds[timeframeId][epoch].lockBlock != 0 &&
@@ -584,127 +704,4 @@ contract BinaryMarket is
             block.number > rounds[timeframeId][epoch].startBlock;
     }
 
-    /**
-     * @dev Get the refundable stats of specific epoch and user account
-     */
-    function refundable(
-        uint8 timeframeId,
-        uint256 epoch,
-        address user
-    ) public view returns (bool) {
-        // fixme now imagine that people will refund their lost bets. We need to do some interval between close timestamp and us writing close price. Let's say you can refund if we don't write price within 30minutes after close timestamp.
-        // legendary - Yes, I agree. We can set buffer block for each timeframe.
-        BetInfo memory betInfo = ledger[timeframeId][epoch][user];
-        Round memory round = rounds[timeframeId][epoch];
-        return
-            !round.oracleCalled &&
-            block.number > round.closeBlock + timeframes[timeframeId].bufferBlocks &&
-            betInfo.amount != 0;
-    }
-
-    /**
-    * @dev Pause/unpause
-    */
-
-    function setPause(bool value) external onlyOperator {
-        if (value) {
-            _pause();
-        } else {
-            genesisStartOnce = false;
-            for (uint i; i < timeframes.length; i = i + 1) {
-                genesisLockOnces[timeframes[i].id] = false;
-            }
-            _unpause();
-        }
-    }
-
-    
-    /**
-     * @dev set minBetAmount
-     * callable by admin
-     */
-    function setMinBetAmount(uint256 _minBetAmount) external onlyAdmin {
-        minBetAmount = _minBetAmount;
-    }
-
-    function isNecessaryToExecute(uint8 timeframeId) public view returns(bool) {
-        if (!genesisLockOnces[timeframeId] || !genesisStartOnce) {
-            return false;
-        }
-
-        uint256 currentEpoch = currentEpochs[timeframeId];
-        Round memory round = rounds[timeframeId][currentEpoch];
-        Round memory prevRound = rounds[timeframeId][currentEpoch - 1];
-
-        bool lockable = round.startBlock != 0 && round.lockPrice == 0 && block.number >= round.lockBlock;
-        bool closable = prevRound.lockBlock !=0 && prevRound.closePrice == 0 && !prevRound.oracleCalled && block.number >= prevRound.closeBlock;
-
-        return lockable && closable && (prevRound.totalAmount > 0 || round.totalAmount > 0);
-    }
-
-
-    // fixme why this not returning array of uint8?
-    // legendary: OK Agree.
-    /**
-        @dev check if bet is active
-     */
-
-    function getExecutableTimeframes() external view override returns(uint8[] memory result, uint256 count) {
-        result = new uint8[](timeframes.length);
-
-        for (uint256 i = 0; i < timeframes.length; i = i + 1) {
-            uint8 timeframeId = timeframes[i].id;
-
-            if (isNecessaryToExecute(timeframeId)) {
-                result[i] = timeframeId;
-                count = count + 1;
-            }
-        }
-    }
-
-    /**
-     * @dev Return round epochs that a user has participated in specific timeframe
-     */
-    function getUserRounds(
-        uint8 timeframeId,
-        address user,
-        uint256 cursor,
-        uint256 size
-    ) external view returns (uint256[] memory, uint256) {
-        uint256 length = size;
-        if (length > userRounds[timeframeId][user].length - cursor) {
-            length = userRounds[timeframeId][user].length - cursor;
-        }
-
-        uint256[] memory values = new uint256[](length);
-        for (uint256 i = 0; i < length; i++) {
-            values[i] = userRounds[timeframeId][user][cursor + i];
-        }
-
-        return (values, cursor + length);
-    }
-
-    /**
-     * @dev Caluclate current round based on genesis timestamp and block number
-     * @param timeframeId timeframe id what we want to get round number
-    */
-    function getCurrentUserRoundNumber(uint8 timeframeId) 
-        external 
-        view 
-        returns(uint256 roundFromBlockNumber, uint256 roundFromBlockTime )
-    {
-        roundFromBlockNumber = (block.number - genesisStartBlockNumber) / timeframes[timeframeId].intervalBlocks;
-        roundFromBlockTime = (block.timestamp - genesisStartBlockTimestamp) / timeframes[timeframeId].interval;
-    }
-
-    /**
-    * @dev Check if round is bettable
-    */
-    function isBettable(uint8 timeframeId, uint256 epoch)
-        external
-        view
-        returns(bool)
-    {
-        return _bettable(timeframeId, epoch);
-    }
 }
