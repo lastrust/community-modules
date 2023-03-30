@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-interface IOracle {
+interface IBinaryOracle {
     struct Round {
         uint256 roundId;
         uint256 timestamp;
@@ -17,9 +17,9 @@ interface IOracle {
     ) external;
 
     function writeBatchPrices(
-        uint256[] memory roundIds,
-        uint256[] memory timestamps,
-        uint256[] memory prices
+        uint256[] calldata roundIds,
+        uint256[] calldata timestamps,
+        uint256[] calldata prices
     ) external;
 
     function getRoundData(uint256 roundId)
