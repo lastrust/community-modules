@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// Uncomment this line to use console.log
-import "hardhat/console.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -21,6 +19,7 @@ error NotEOA();
 error NotEnoughBalance();
 error ZeroAmount();
 error NotExistToken();
+error NotOwnerOf();
 
 contract PermissionVault is
   IPermissionVault,
@@ -198,7 +197,7 @@ contract PermissionVault is
     }
 
     (bool success, ) = to.call{value: amount}("");
-    require(success);
+    require(success, "Transfer ether failed");
 
     emit WithdrawEther(msg.sender, to, amount);
   }
@@ -211,6 +210,9 @@ contract PermissionVault is
   function depositERC20(IERC20 token, uint256 amount) external {
     if (amount == 0) {
       revert ZeroAmount();
+    }
+    if (token.balanceOf(msg.sender) < amount) {
+      revert NotEnoughBalance();
     }
 
     token.safeTransferFrom(msg.sender, address(this), amount);
@@ -242,6 +244,9 @@ contract PermissionVault is
    * @param id the token ID to deposit
    */
   function depositERC721(IERC721 token, uint256 id) external {
+    if (token.ownerOf(id) != msg.sender) {
+      revert NotOwnerOf();
+    }
     token.safeTransferFrom(msg.sender, address(this), id);
     emit DepositERC721(msg.sender, token, id);
   }
@@ -274,6 +279,9 @@ contract PermissionVault is
   function depositERC1155(IERC1155 token, uint256 id, uint256 amount) external {
     if (amount == 0) {
       revert ZeroAmount();
+    }
+    if (token.balanceOf(msg.sender, id) < amount) {
+      revert NotEnoughBalance();
     }
 
     token.safeTransferFrom(msg.sender, address(this), id, amount, "");
