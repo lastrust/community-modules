@@ -10,7 +10,6 @@ import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IPermissionVault} from "./interfaces/IPermissionVault.sol";
 
@@ -27,7 +26,6 @@ contract PermissionVault is
   IERC1155Receiver,
   Ownable,
   AccessControl,
-  Pausable,
   ReentrancyGuard
 {
   using SafeERC20 for IERC20;
@@ -126,22 +124,6 @@ contract PermissionVault is
   constructor() {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _setupRole(CONTROLLER_ROLE, msg.sender);
-  }
-
-  /**
-   * @notice The owner can use this function to pause or unpause the contract.
-   * If newPaused is true, the contract will be paused, and no functions can be
-   * called except setPaused. If newPaused is false, the contract will be
-   * unpaused.
-   * @dev Callable by owner
-   * @param newPaused Flag to new paused state
-   */
-  function setPaused(bool newPaused) external onlyOwner {
-    if (newPaused) {
-      _pause();
-    } else {
-      _unpause();
-    }
   }
 
   /**

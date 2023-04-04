@@ -86,30 +86,6 @@ describe("PermissionVault", function () {
     });
   });
 
-  describe("Pausable", () => {
-    it("should not allow non-owners to pause the contract", async () => {
-      await expect(
-        permissionVault.connect(controller).setPaused(true)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
-    });
-
-    it("should allow owners to pause and unpause the contract", async () => {
-      expect(await permissionVault.paused()).to.be.false;
-
-      await expect(permissionVault.connect(owner).setPaused(true)).to.emit(
-        permissionVault,
-        "Paused"
-      );
-      expect(await permissionVault.paused()).to.be.true;
-
-      await expect(permissionVault.connect(owner).setPaused(false)).to.emit(
-        permissionVault,
-        "Unpaused"
-      );
-      expect(await permissionVault.paused()).to.be.false;
-    });
-  });
-
   describe("Controller", () => {
     it("should set the owner as the default admin and controller", async () => {
       const defaultAdminRole = await permissionVault.DEFAULT_ADMIN_ROLE();
