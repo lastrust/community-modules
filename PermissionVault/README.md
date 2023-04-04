@@ -2,13 +2,13 @@
 
 ## Overview
 
-PermissionVault is a smart contract that provides a way to store assets on the blockchain with multiple controllers. The assets can be in the form of Ether, ERC20 tokens, ERC721 tokens, or ERC1155 tokens. The contract is designed to allow the owner of the contract to manage a list of controllers who can deposit, withdraw, or transfer assets.
+PermissionVault is a smart contract that provides a way to store assets on the blockchain with multiple controllers. The assets can be in the form of Ether, ERC20 tokens, ERC721 tokens, or ERC1155 tokens. Anybody can deposit assets, and then the controllers can withdraw assets from the contracts.
 
 ## How to use
 
 - Deploy the PermissionVault contract on the blockchain.
 - Call the `addController` function to add controllers who can manage the assets.
-- The controllers can then deposit, withdraw or transfer assets by calling the appropriate function in the contract.
+- Anybody can deposit assets, but only the controllers can then withdraw from the contract.
 - The owner of the contract can pause and unpause the contract by calling the `setPaused` function.
 
 ## Functions
