@@ -19,6 +19,7 @@ error NotEnoughBalance();
 error ZeroAmount();
 error NotExistToken();
 error NotOwnerOf();
+error ZeroAddress();
 
 contract PermissionVault is
   IPermissionVault,
@@ -38,29 +39,42 @@ contract PermissionVault is
   /* -------------------------------------------------------------------------- */
 
   /**
-   * Emitted when new controller was added
+   * @notice Emitted when new controller was added
+   * @param controller new controller address
    */
   event AddController(address controller);
   /**
-   * Emitted when controller was removed
+   * @notice Emitted when controller was removed
+   * @param controller controller address being removed
    */
   event RemoveController(address controller);
 
   /**
-   * Emitted when controller deposited Ether
+   * @notice Emitted when controller deposited Ether
+   * @param controller controller address
+   * @param amount deposit amount
    */
   event DepositEther(address controller, uint256 amount);
   /**
-   * Emitted when controller withdrawed Ether
+   * @notice Emitted when controller withdrawed Ether
+   * @param controller controller address
+   * @param to withdrawal address
+   * @param amount withdraw amount
    */
   event WithdrawEther(address controller, address to, uint256 amount);
 
   /**
-   * Emitted when controller deposited ERC20
+   * @notice Emitted when controller deposited ERC20
+   * @param controller controller address
+   * @param token deposit token
+   * @param amount deposit amount
    */
   event DepositERC20(address controller, IERC20 token, uint256 amount);
   /**
-   * Emitted when controller withdrawed ERC20
+   * @notice Emitted when controller withdrawed ERC20
+   * @param controller controller address
+   * @param token withdraw token
+   * @param amount withdraw amount
    */
   event WithdrawERC20(
     address controller,
@@ -70,11 +84,18 @@ contract PermissionVault is
   );
 
   /**
-   * Emitted when controller deposited ERC721
+   * @notice Emitted when controller deposited ERC721
+   * @param controller controller address
+   * @param token deposit token
+   * @param id ERC721 token id
    */
   event DepositERC721(address controller, IERC721 token, uint256 id);
   /**
-   * Emitted when controller withdrawed ERC721
+   * @notice Emitted when controller withdrawed ERC721
+   * @param controller controller address
+   * @param to withdrawal address
+   * @param token deposit token
+   * @param id ERC721 token id
    */
   event WithdrawERC721(
     address controller,
@@ -84,7 +105,11 @@ contract PermissionVault is
   );
 
   /**
-   * Emitted when controller deposited ERC1155
+   * @notice Emitted when controller deposited ERC1155
+   * @param controller controller address
+   * @param token deposit token
+   * @param id ERC1155 token id
+   * @param amount deposit amount
    */
   event DepositERC1155(
     address controller,
@@ -93,7 +118,11 @@ contract PermissionVault is
     uint256 amount
   );
   /**
-   * Emitted when controller withdrawed ERC1155
+   * @notice Emitted when controller withdrawed ERC1155
+   * @param controller controller address
+   * @param token deposit token
+   * @param id ERC1155 token id
+   * @param amount deposit amount
    */
   event WithdrawERC1155(
     address controller,
@@ -134,6 +163,9 @@ contract PermissionVault is
    * @param controller new controller address
    */
   function addController(address controller) external onlyOwner {
+    if (controller == address(0)) {
+      revert ZeroAddress();
+    }
     _setupRole(CONTROLLER_ROLE, controller);
 
     emit AddController(controller);
@@ -147,6 +179,9 @@ contract PermissionVault is
    * @param controller controller address
    */
   function removeController(address controller) external onlyOwner {
+    if (controller == address(0)) {
+      revert ZeroAddress();
+    }
     revokeRole(CONTROLLER_ROLE, controller);
 
     emit RemoveController(controller);
@@ -174,6 +209,9 @@ contract PermissionVault is
     address to,
     uint256 amount
   ) external nonReentrant onlyController {
+    if (to == address(0)) {
+      revert ZeroAddress();
+    }
     if (amount > address(this).balance) {
       revert NotEnoughBalance();
     }
@@ -190,6 +228,9 @@ contract PermissionVault is
    * @param amount the amount of tokens to deposit
    */
   function depositERC20(IERC20 token, uint256 amount) external {
+    if (address(token) == address(0)) {
+      revert ZeroAddress();
+    }
     if (amount == 0) {
       revert ZeroAmount();
     }
@@ -212,6 +253,9 @@ contract PermissionVault is
     IERC20 token,
     uint256 amount
   ) external onlyController {
+    if (address(to) == address(0)) {
+      revert ZeroAddress();
+    }
     if (amount > token.balanceOf(address(this))) {
       revert NotEnoughBalance();
     }
@@ -226,6 +270,9 @@ contract PermissionVault is
    * @param id the token ID to deposit
    */
   function depositERC721(IERC721 token, uint256 id) external {
+    if (address(token) == address(0)) {
+      revert ZeroAddress();
+    }
     if (token.ownerOf(id) != msg.sender) {
       revert NotOwnerOf();
     }
@@ -244,6 +291,9 @@ contract PermissionVault is
     IERC721 token,
     uint256 id
   ) external onlyController {
+    if (to == address(0) || address(token) == address(0)) {
+      revert ZeroAddress();
+    }
     if (token.ownerOf(id) != address(this)) {
       revert NotExistToken();
     }
@@ -259,6 +309,9 @@ contract PermissionVault is
    * @param amount the amount of tokens to deposit
    */
   function depositERC1155(IERC1155 token, uint256 id, uint256 amount) external {
+    if (address(token) == address(0)) {
+      revert ZeroAddress();
+    }
     if (amount == 0) {
       revert ZeroAmount();
     }
@@ -283,6 +336,9 @@ contract PermissionVault is
     uint256 id,
     uint256 amount
   ) external onlyController {
+    if (address(to) == address(0) || address(token) == address(0)) {
+      revert ZeroAddress();
+    }
     if (amount > token.balanceOf(address(this), id)) {
       revert NotEnoughBalance();
     }
