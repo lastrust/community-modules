@@ -9,6 +9,9 @@ import "./interfaces/IBinaryOracle.sol";
 error BINARY_ORACLE_NOT_ADMIN();
 error BINARY_ORACLE_NOT_WRITER();
 
+/**
+ * @dev Contract module that provides price data to binary game written by writer.
+ */
 contract BinaryOracle is AccessControl, IBinaryOracle {
     bytes32 public constant WRITER_ROLE = keccak256("GAME_ORACLE_WRITER");
 
@@ -102,7 +105,6 @@ contract BinaryOracle is AccessControl, IBinaryOracle {
     function setWriter(address writer, bool enable) external onlyAdmin {
         require(writer != address(0), "Invalid address");
         if (enable) {
-            // fixme can you require that it's disabled if you are doing enable 
             grantRole(WRITER_ROLE, writer);
         } else {
             revokeRole(WRITER_ROLE, writer);
@@ -112,7 +114,7 @@ contract BinaryOracle is AccessControl, IBinaryOracle {
 
     /**
      * @notice External function that returns the price and timestamp by round id
-     * @param roundId Round ID to get
+     * @param roundId The ID of the target Round to get the price and timestamp
      * @return timestamp Round Time
      * @return price Round price
      */
@@ -127,6 +129,10 @@ contract BinaryOracle is AccessControl, IBinaryOracle {
         require(timestamp != 0, "Invalid Round ID");
     }
 
+    /**
+     * @notice External function that returns the whole round data of the latest round
+     * @return latestRoundData Round data
+     */
     function getLatestRoundData() external view returns (Round memory) {
         return latestRoundData;
     }
