@@ -10,8 +10,12 @@ import "./interfaces/IBinaryMarket.sol";
 import "./interfaces/IBinaryVault.sol";
 import "./interfaces/IOracle.sol";
 
-// fixme I would personally get rid of roundid in oracle. Its redundant information. No need to have it in oracle and I would like if possible to switch oracle to chain link (to allow to write it like we can not that we will do it). That means we can use same oracle for perps. We want to configure perps from existing contracts we have. Less code we need to test and maintain.
-// fixme decide if use error constants or error string, not both. Better to use "ERROR_LIKE_THIS" then "like this"
+// Common Errors
+error ZERO_ADDRESS();
+
+/**
+ * @dev Contract module that allow players to bet on the price changes of the certain token and win the reward.
+ */
 contract BinaryMarket is
     Pausable,
     ReentrancyGuard,
@@ -161,11 +165,11 @@ contract BinaryMarket is
         address operatorAddress_,
         uint256 minBetAmount_
     ) {
-        require(oracle_ != address(0), "ZERO_ADDRESS()");
-        require(vault_ != address(0), "ZERO_ADDRESS()");
-        require(adminAddress_ != address(0), "ZERO_ADDRESS()");
-        require(operatorAddress_ != address(0), "ZERO_ADDRESS()");
-        require(timeframes_.length != 0, "INVALID_TIMEFRAMES()");
+        if(oracle_ == address(0)) revert ZERO_ADDRESS();
+        if(vault_ == address(0)) revert ZERO_ADDRESS();
+        if(adminAddress_ == address(0)) revert ZERO_ADDRESS();
+        if(operatorAddress_ == address(0)) revert ZERO_ADDRESS();
+        require(timeframes_.length != 0, "BinaryMarket: INVALID_TIMEFRAMES");
 
         oracle = IOracle(oracle_);
         vault = IBinaryVault(vault_);
@@ -188,9 +192,9 @@ contract BinaryMarket is
      * @param oracle_ New oracle address to set
      */
     function setOracle(address oracle_) external onlyAdmin {
-        if (oracle_ == address(0)) revert("ZERO_ADDRESS()");
-        emit OracleChanged(address(oracle), oracle_);
+        if (oracle_ == address(0)) revert ZERO_ADDRESS();
         oracle = IOracle(oracle_);
+        emit OracleChanged(address(oracle), oracle_);
     }
 
     /**
@@ -199,8 +203,8 @@ contract BinaryMarket is
      * @param name_ New name to set
      */
     function setName(string calldata name_) external onlyAdmin {
-        emit MarketNameChanged(marketName, name_);
         marketName = name_;
+        emit MarketNameChanged(marketName, name_);
     }
 
     /**
@@ -209,9 +213,36 @@ contract BinaryMarket is
      * @param admin_ New admin to set
      */
     function setAdmin(address admin_) external onlyAdmin {
-        require(admin_ != address(0), "Zero address");
-        emit AdminChanged(adminAddress, admin_);
+        if (admin_ == address(0)) revert ZERO_ADDRESS();
         adminAddress = admin_;
+        emit AdminChanged(adminAddress, admin_);
+    }
+
+    /**
+    * @dev Pause/unpause
+    */
+
+    function setPause(bool value) external onlyOperator {
+        if (value) {
+            _pause();
+        } else {
+            genesisStartOnce = false;
+            for (uint i; i < timeframes.length; i = i + 1) {
+                genesisLockOnces[timeframes[i].id] = false;
+            }
+            _unpause();
+        }
+    }
+
+    
+    /**
+     * @dev set minBetAmount
+     * callable by admin
+     */
+    function setMinBetAmount(uint256 _minBetAmount) external onlyAdmin {
+        minBetAmount = _minBetAmount;
+
+        emit MinBetAmountChanged(_minBetAmount);
     }
 
     /**
@@ -220,9 +251,9 @@ contract BinaryMarket is
      * @param operator_ New operator to set
      */
     function setOperator(address operator_) external onlyAdmin {
-        require(operator_ != address(0), "Zero address");
-        emit OperatorChanged(operatorAddress, operator_);
+        if (operator_ == address(0)) revert ZERO_ADDRESS();
         operatorAddress = operator_;
+        emit OperatorChanged(operatorAddress, operator_);
     }
 
     /**
@@ -231,7 +262,7 @@ contract BinaryMarket is
      * @param timeframes_ New timeframe to set
      */
     function setTimeframes(TimeFrame[] calldata timeframes_) external onlyAdmin {
-        require(timeframes_.length > 0, "Invalid length");
+        require(timeframes_.length > 0, "BinaryMarket: Invalid length");
         genesisStartOnce = false;
         delete timeframes;
         for (uint256 i = 0; i < timeframes_.length; i = i + 1) {
@@ -241,7 +272,7 @@ contract BinaryMarket is
     }
 
     /**
-     * @dev Bet bear position
+     * @dev Bet bull/bear position
      * @param amount Bet amount
      * @param timeframeId id of 1m/5m/10m
      * @param position bull/bear
@@ -254,14 +285,14 @@ contract BinaryMarket is
         uint256 currentEpoch = currentEpochs[timeframeId];
         underlyingToken.safeTransferFrom(msg.sender, address(vault), amount);
 
-        require(_bettable(timeframeId, currentEpoch), "Round not bettable");
+        require(_bettable(timeframeId, currentEpoch), "BinaryMarket: Round not bettable");
         require(
             amount >= minBetAmount,
-            "Bet amount must be greater than minBetAmount"
+            "BinaryMarket: Bet amount must be greater than minBetAmount"
         );
         require(
             ledger[timeframeId][currentEpoch][msg.sender].amount == 0,
-            "Can only bet once per round"
+            "BinaryMarket: Can only bet once per round"
         );
 
         // Update round data
@@ -300,10 +331,26 @@ contract BinaryMarket is
     }
 
     /**
+     * @notice Batch claim winning rewards
+     * @param timeframeIds Timeframe IDs to claim winning rewards
+     * @param epochs round ids
+     */
+    function claimBatch(uint8[] calldata timeframeIds, uint256[][] calldata epochs) external override {
+        require(timeframeIds.length == epochs.length, "BinaryMarket: Invalid array length");
+
+        for (uint256 i = 0; i < timeframeIds.length; i = i + 1) {
+            uint8 timeframeId = timeframeIds[i];
+            for (uint256 j = 0; j < epochs[i].length; j = j + 1) {
+                _claim(timeframeId, epochs[i][j]);
+            }
+        }
+    }
+
+    /**
      * @dev Start genesis round
      */
     function genesisStartRound() external onlyOperator whenNotPaused {
-        require(!genesisStartOnce, "Can only run genesisStartRound once");
+        require(!genesisStartOnce, "BinaryMarket: Can only run genesisStartRound once");
         genesisStartBlockTimestamp = block.timestamp;
         genesisStartBlockNumber = block.number;
         for (uint256 i = 0; i < timeframes.length; i = i + 1) {
@@ -318,8 +365,8 @@ contract BinaryMarket is
      * @dev Lock genesis round
      */
     function genesisLockRound(uint8 timeframeId) external onlyOperator whenNotPaused {
-        require(genesisStartOnce, "Can only run after genesisStartRound is triggered");
-        require(!genesisLockOnces[timeframeId], "Can only run genesisLockRound once");
+        require(genesisStartOnce, "BinaryMarket: Can only run after genesisStartRound is triggered");
+        require(!genesisLockOnces[timeframeId], "BinaryMarket: Can only run genesisLockRound once");
         
         _writeOraclePrice(block.timestamp, 1 wei);
         (uint256 currentRoundId, uint256 currentPrice, ) = _getPriceFromOracle();
@@ -332,6 +379,8 @@ contract BinaryMarket is
 
     /**
      * @dev Start the next round n, lock price for round n-1, end round n-2
+     * @param timeframeIds Timeframe IDs to close the betting and calculate the winners and rewards.
+     * @param price The price of the current timestamp
      */
     function executeRound(
         uint8[] calldata timeframeIds,
@@ -339,7 +388,7 @@ contract BinaryMarket is
     ) external override onlyOperator whenNotPaused {
         require(
             genesisStartOnce,
-            "Can only run after genesisStartRound is triggered"
+            "BinaryMarket: Can only run after genesisStartRound is triggered"
         );
         uint256 timestamp = block.timestamp;
         // Update oracle price
@@ -376,71 +425,10 @@ contract BinaryMarket is
     }
 
     /**
-     * @notice Batch claim winning rewards
-     * @param timeframeIds Timeframe IDs to claim winning rewards
-     * @param epochs round ids
+     * @dev Check if bet is active and returns the avaialble timeframe IDs
+     * @return result Timeframe IDs which are active.
+     * @return count The number of timeframe IDs
      */
-    function claimBatch(uint8[] calldata timeframeIds, uint256[][] calldata epochs) external override {
-        require(timeframeIds.length == epochs.length, "Invalid array length");
-
-        for (uint256 i = 0; i < timeframeIds.length; i = i + 1) {
-            uint8 timeframeId = timeframeIds[i];
-            for (uint256 j = 0; j < epochs[i].length; j = j + 1) {
-                _claim(timeframeId, epochs[i][j]);
-            }
-        }
-    }
-
-    function getUnderlyingToken() external view returns (IERC20) {
-        return underlyingToken;
-    }
-
-
-    /**
-     * @dev Get the refundable stats of specific epoch and user account
-     */
-    function refundable(
-        uint8 timeframeId,
-        uint256 epoch,
-        address user
-    ) public view returns (bool) {
-        BetInfo memory betInfo = ledger[timeframeId][epoch][user];
-        Round memory round = rounds[timeframeId][epoch];
-        return
-            !round.oracleCalled &&
-            block.number > round.closeBlock + timeframes[timeframeId].bufferBlocks &&
-            betInfo.amount != 0;
-    }
-
-    /**
-    * @dev Pause/unpause
-    */
-
-    function setPause(bool value) external onlyOperator {
-        if (value) {
-            _pause();
-        } else {
-            genesisStartOnce = false;
-            for (uint i; i < timeframes.length; i = i + 1) {
-                genesisLockOnces[timeframes[i].id] = false;
-            }
-            _unpause();
-        }
-    }
-
-    
-    /**
-     * @dev set minBetAmount
-     * callable by admin
-     */
-    function setMinBetAmount(uint256 _minBetAmount) external onlyAdmin {
-        minBetAmount = _minBetAmount;
-
-        emit MinBetAmountChanged(_minBetAmount);
-    }
-
-    /// @dev check if bet is active
-
     function getExecutableTimeframes() external view override returns(uint8[] memory result, uint256 count) {
         result = new uint8[](timeframes.length);
 
@@ -501,6 +489,30 @@ contract BinaryMarket is
     }
 
     /**
+    * @dev Get the underlying token used to bet & win the rewards
+    * @return underlyingToken ERC20 token used to bet and rewards
+    */
+    function getUnderlyingToken() external view returns (IERC20) {
+        return underlyingToken;
+    }
+
+    /**
+     * @dev Get the refundable stats of specific epoch and user account
+     */
+    function refundable(
+        uint8 timeframeId,
+        uint256 epoch,
+        address user
+    ) public view returns (bool) {
+        BetInfo memory betInfo = ledger[timeframeId][epoch][user];
+        Round memory round = rounds[timeframeId][epoch];
+        return
+            !round.oracleCalled &&
+            block.number > round.closeBlock + timeframes[timeframeId].bufferBlocks &&
+            betInfo.amount != 0;
+    }
+
+    /**
      * @dev Get the claimable stats of specific epoch and user account
      */
     function isClaimable(
@@ -523,6 +535,9 @@ contract BinaryMarket is
                     betInfo.position == Position.Bear));
     }
 
+    /**
+     * @dev Check if the round is ready to be executed
+     */
     function isNecessaryToExecute(uint8 timeframeId) public view returns(bool) {
         if (!genesisLockOnces[timeframeId] || !genesisStartOnce) {
             return false;
@@ -545,7 +560,7 @@ contract BinaryMarket is
         IOracle.Round memory latestRound = oracle.getLatestRoundData();
         require(
             latestRound.roundId > oracleLatestRoundId,
-            "Oracle update roundId must be larger than oracleLatestRoundId"
+            "BinaryMarket: Oracle update roundId must be larger than oracleLatestRoundId"
         );
         oracleLatestRoundId = latestRound.roundId;
         return (latestRound.roundId, latestRound.price, latestRound.timestamp);
@@ -563,7 +578,7 @@ contract BinaryMarket is
     function _safeStartRound(uint8 timeframeId, uint256 epoch) internal {
         require(
             block.number >= rounds[timeframeId][epoch - 2].closeBlock,
-            "Can only start new round after round n-2 closeBlock"
+            "BinaryMarket: Can only start new round after round n-2 closeBlock"
         );
         _startRound(timeframeId, epoch);
     }
@@ -590,11 +605,11 @@ contract BinaryMarket is
     ) internal {
         require(
             rounds[timeframeId][epoch].startBlock != 0,
-            "Can only lock round after round has started"
+            "BinaryMarket: Can only lock round after round has started"
         );
         require(
             block.number >= rounds[timeframeId][epoch].lockBlock,
-            "Can only lock round after lockBlock"
+            "BinaryMarket: Can only lock round after lockBlock"
         );
         _lockRound(timeframeId, epoch, roundId, price);
     }
@@ -623,11 +638,11 @@ contract BinaryMarket is
     ) internal {
         require(
             rounds[timeframeId][epoch].lockBlock != 0,
-            "Can only end round after round has locked"
+            "BinaryMarket: Can only end round after round has locked"
         );
         require(
             block.number >= rounds[timeframeId][epoch].closeBlock,
-            "Can only end round after closeBlock"
+            "BinaryMarket: Can only end round after closeBlock"
         );
         _endRound(timeframeId, epoch, roundId, price);
     }
@@ -649,15 +664,15 @@ contract BinaryMarket is
     function _claim(uint8 timeframeId, uint256 epoch) internal {
         require(
             rounds[timeframeId][epoch].startBlock != 0,
-            "Round has not started"
+            "BinaryMarket: Round has not started"
         );
         require(
             block.number > rounds[timeframeId][epoch].closeBlock,
-            "Round has not ended"
+            "BinaryMarket: Round has not ended"
         );
         require(
             !ledger[timeframeId][epoch][msg.sender].claimed,
-            "Rewards claimed"
+            "BinaryMarket: Rewards claimed"
         );
 
         uint256 rewardAmount = 0;
@@ -667,7 +682,7 @@ contract BinaryMarket is
         if (rounds[timeframeId][epoch].oracleCalled) {
             require(
                 isClaimable(timeframeId, epoch, msg.sender),
-                "Not eligible for claim"
+                "BinaryMarket: Not eligible for claim"
             );
             rewardAmount = betInfo.amount * 2;
         }
@@ -675,7 +690,7 @@ contract BinaryMarket is
         else {
             require(
                 refundable(timeframeId, epoch, msg.sender),
-                "Not eligible for refund"
+                "BinaryMarket: Not eligible for refund"
             );
 
             rewardAmount = betInfo.amount;
